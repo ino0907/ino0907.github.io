@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>山の天気 — 登山者のための2週間予報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #E8E0C7;
+    --paper-deep: #DED4B4;
+    --ink: #2E3A2F;
+    --ink-soft: #55604F;
+    --moss: #56714F;
+    --moss-deep: #3E5439;
+    --cold: #4C6B7A;
+    --warn: #B6472E;
+    --line: rgba(46,58,47,0.22);
+    --card-bg: #F1EAD3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh;
+  }
+  .contour-hero{
+    position:relative;
+    overflow:hidden;
+    padding:38px 28px 30px;
+    border-bottom:2px solid var(--ink);
+  }
+  .contour-hero svg.bg{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0.35; pointer-events:none;
+  }
+  .hero-inner{position:relative; z-index:1; max-width:920px;}
+  h1{
+    font-family:'Shippori Mincho', serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    margin:0 0 6px;
+    letter-spacing:0.02em;
+  }
+  .sub{
+    font-size:14px;
+    color:var(--ink-soft);
+    max-width:60ch;
+    line-height:1.7;
+    margin:0 0 22px;
+  }
+  .search-row{display:flex; gap:8px; flex-wrap:wrap; align-items:center; position:relative;}
+  input#mtSearch{
+    background:var(--card-bg);
+    border:1.5px solid var(--ink);
+    padding:10px 14px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    min-width:240px;
+    flex:1 1 240px;
+  }
+  input#mtSearch:focus{outline:2px solid var(--moss); outline-offset:1px;}
+  #suggestions{
+    position:absolute; top:44px; left:0; width:min(400px,90%);
+    background:var(--card-bg); border:1.5px solid var(--ink);
+    z-index:20; max-height:240px; overflow-y:auto; display:none;
+  }
+  #suggestions div{padding:9px 12px; font-size:14px; cursor:pointer; border-bottom:1px solid var(--line);}
+  #suggestions div:hover{background:var(--paper-deep);}
+  .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .chip{
+    border:1px solid var(--ink);
+    background:transparent;
+    color:var(--ink);
+    padding:6px 12px;
+    font-size:13px;
+    font-family:inherit;
+    cursor:pointer;
+    transition:background .15s, color .15s;
+  }
+  .chip:hover, .chip.active{background:var(--ink); color:var(--paper);}
+
+  main{max-width:1180px; margin:0 auto; padding:28px;}
+  .selected-panel{
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    border-bottom:1px dashed var(--ink); padding-bottom:16px; margin-bottom:22px;
+  }
+  .selected-panel h2{font-family:'Shippori Mincho',serif; font-size:26px; margin:0;}
+  .meta{display:flex; gap:22px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--ink-soft); flex-wrap:wrap;}
+  .meta b{color:var(--ink); font-weight:600;}
+  .elev-edit{display:flex; align-items:center; gap:6px; font-size:13px;}
+  .elev-edit input{
+    width:80px; font-family:'JetBrains Mono',monospace; font-size:13px;
+    border:1px solid var(--ink); background:var(--card-bg); padding:4px 6px; color:var(--ink);
+  }
+  .model-note{font-size:12.5px; color:var(--ink-soft); margin-bottom:18px; line-height:1.7; max-width:70ch;}
+
+  #status{font-size:14px; color:var(--ink-soft); padding:20px 0;}
+
+  .ridge-wrap{position:relative; margin-bottom:8px;}
+  .ridge-wrap svg.ridge{display:block; width:100%; height:34px;}
+
+  .days-row{display:flex; gap:0; overflow-x:auto; padding-bottom:10px; scrollbar-width:thin;}
+  .day-card{
+    flex:0 0 128px;
+    border-right:1px dashed var(--line);
+    padding:10px 12px 14px;
+    cursor:pointer;
+    transition:background .15s;
+  }
+  .day-card:first-child{border-left:1px dashed var(--line);}
+  .day-card:hover{background:var(--card-bg);}
+  .day-card.active{background:var(--card-bg); box-shadow:inset 0 -3px 0 var(--moss);}
+  .day-card .dow{font-size:12px; color:var(--ink-soft);}
+  .day-card .date{font-family:'JetBrains Mono',monospace; font-size:13px; margin-bottom:6px;}
+  .day-card svg.icon{width:34px; height:34px; display:block; margin:2px 0 6px;}
+  .day-card .temps{font-family:'JetBrains Mono',monospace; font-size:14px;}
+  .day-card .temps .hi{font-weight:600;}
+  .day-card .temps .lo{color:var(--ink-soft);}
+  .day-card .pop{font-size:12px; color:var(--cold); margin-top:4px;}
+  .day-card .conf{
+    display:inline-block; margin-top:8px; font-size:10.5px; padding:2px 6px;
+    border:1px solid currentColor;
+  }
+  .conf.high{color:var(--moss-deep);}
+  .conf.mid{color:#8A6A2E;}
+  .conf.low{color:var(--warn);}
+  .day-card .src{font-size:10px; color:var(--ink-soft); margin-top:3px;}
+
+  .tile-grid-wrap{margin:6px 0 26px;}
+  .tile-title{font-family:'Shippori Mincho',serif; font-size:16px; margin:0 0 8px;}
+  #tileGrid{
+    display:grid;
+    grid-template-columns: 34px repeat(16, minmax(0,1fr));
+    gap:3px;
+    overflow-x:auto;
+  }
+  .tile-day-label{
+    font-family:'JetBrains Mono',monospace; font-size:10px; text-align:center;
+    color:var(--ink-soft); padding-bottom:2px; white-space:nowrap;
+  }
+  .tile-row-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft);
+    display:flex; align-items:center;
+  }
+  .tile-cell{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+    font-size:14px; border:1px solid var(--ink); cursor:pointer;
+  }
+  .tile-cell.sel{ box-shadow: inset 0 0 0 2px var(--moss); }
+  .tile-legend{font-size:11.5px; color:var(--ink-soft); margin-top:8px;}
+
+  .detail{
+    margin-top:26px; border-top:2px solid var(--ink); padding-top:20px;
+  }
+  .detail h3{font-family:'Shippori Mincho',serif; font-size:20px; margin:0 0 4px;}
+  .detail .conf-line{font-size:13px; color:var(--ink-soft); margin-bottom:16px;}
+  .summit-flags{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px;}
+  .flag{
+    border:1px solid var(--ink); padding:8px 12px; font-size:13px; min-width:150px;
+    background:var(--card-bg);
+  }
+  .flag b{display:block; font-family:'JetBrains Mono',monospace; font-size:15px; margin-top:2px;}
+  .flag.warn{border-color:var(--warn); color:var(--warn);}
+  .flag.cold{border-color:var(--cold); color:var(--cold);}
+
+  .chart-wrap{
+    border:1px solid var(--ink); background:var(--card-bg);
+    padding:10px 6px 4px; margin-bottom:18px;
+  }
+  .chart-legend{font-size:11.5px; color:var(--ink-soft); text-align:right; padding:2px 10px 6px;}
+  .view-toggle{display:flex; gap:8px; padding:0 6px 8px;}
+  .view-toggle .chip{font-size:12px; padding:4px 10px;}
+  #dayMap{display:none; height:300px; width:100%; border:1px solid var(--line);}
+
+  .elev-profile{border:1px solid var(--ink); padding:14px 16px; margin-bottom:20px;}
+  .elev-profile h4{font-family:'Shippori Mincho',serif; font-size:16px; margin:0 0 10px;}
+  .elev-controls{font-size:13px; display:flex; align-items:center; gap:6px; margin-bottom:12px;}
+  .elev-controls input{
+    width:80px; font-family:'JetBrains Mono',monospace; font-size:13px;
+    border:1px solid var(--ink); background:var(--card-bg); padding:4px 6px; color:var(--ink);
+  }
+  .profile-row{
+    display:flex; align-items:center; gap:14px; padding:8px 10px;
+    border-left:4px solid var(--ink-soft); background:var(--paper); margin-bottom:6px;
+    font-size:13.5px;
+  }
+  .profile-row.snow{border-left-color:var(--cold);}
+  .profile-row.rain{border-left-color:var(--moss);}
+  .profile-row.mix{border-left-color:#8A6A2E;}
+  .profile-row .pe{font-family:'JetBrains Mono',monospace; font-weight:600; min-width:76px;}
+  .profile-row .pt{font-family:'JetBrains Mono',monospace; min-width:90px; color:var(--ink-soft);}
+  .profile-row .pp{font-size:12.5px;}
+  .elev-note{font-size:11.5px; color:var(--ink-soft); line-height:1.7; margin-top:8px;}
+
+  table.hourly{width:100%; border-collapse:collapse; font-size:13px;}
+  table.hourly th{
+    text-align:left; font-weight:500; color:var(--ink-soft); font-size:11.5px;
+    padding:6px 8px; border-bottom:1px solid var(--ink);
+  }
+  table.hourly td{padding:6px 8px; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace;}
+  table.hourly tr:hover{background:var(--card-bg);}
+  .hourly-wrap{overflow-x:auto;}
+  .icon-cell svg{width:20px; height:20px; vertical-align:middle;}
+
+  footer{
+    max-width:1180px; margin:0 auto; padding:20px 28px 40px;
+    font-size:12px; color:var(--ink-soft); line-height:1.8; border-top:1px dashed var(--ink);
+  }
+  @media (max-width:640px){
+    .selected-panel{flex-direction:column; align-items:flex-start;}
+  }
+</style>
+</head>
+<body>
+
+<div class="contour-hero">
+  <svg class="bg" viewBox="0 0 900 200" preserveAspectRatio="none">
+    <path d="M0,150 C120,120 180,180 300,140 C420,100 480,160 600,120 C720,80 780,140 900,110" fill="none" stroke="#2E3A2F" stroke-width="1.5"/>
+    <path d="M0,170 C120,145 180,195 300,165 C420,130 480,180 600,145 C720,110 780,165 900,135" fill="none" stroke="#2E3A2F" stroke-width="1.5"/>
+    <path d="M0,190 C120,170 180,210 300,190 C420,160 480,200 600,170 C720,140 780,190 900,160" fill="none" stroke="#2E3A2F" stroke-width="1.5"/>
+    <path d="M0,90 C120,65 180,110 300,80 C420,50 480,100 600,70 C720,40 780,90 900,60" fill="none" stroke="#2E3A2F" stroke-width="1.2"/>
+  </svg>
+  <div class="hero-inner">
+    <h1>山の天気</h1>
+    <p class="sub">登山・縦走の計画向けに、標高を反映した2週間先までの見通しを表示します。先の日ほど確度は下がるので、出発が近づくほど直前の予報で必ず確認してください。</p>
+    <div class="search-row">
+      <input id="mtSearch" type="text" placeholder="山の名前で検索（例: 槍ヶ岳、白馬岳）" autocomplete="off">
+      <div id="suggestions"></div>
+    </div>
+    <div class="chips" id="presetChips"></div>
+  </div>
+</div>
+
+<main>
+  <div id="status">山を選択すると予報を取得します。</div>
+
+  <div id="appBody" style="display:none;">
+    <div class="selected-panel">
+      <div>
+        <h2 id="mtName">—</h2>
+        <div class="meta">
+          <span><b id="mtElev">—</b> m</span>
+          <span id="mtCoord">—</span>
+        </div>
+      </div>
+      <div class="elev-edit">
+        標高補正:
+        <input id="elevInput" type="number" step="10">
+        <span>m</span>
+        <button class="chip" id="applyElev">再取得</button>
+      </div>
+    </div>
+
+    <p class="model-note">気象庁の高解像度モデル（利用可能な範囲）を優先し、それより先の期間は国際モデル（ECMWF/GFS等のブレンド）で補います。各日のカードにデータ元と確度の目安を表示しています。山岳地形の細かい局地風・谷風・吹き溜まりまではモデルの解像度では再現しきれないため、稜線と谷筋で体感が変わる点は現地判断も併用してください。</p>
+
+    <div class="days-row" id="daysRow"></div>
+
+    <div class="tile-grid-wrap">
+      <h3 class="tile-title">2週間の天気タイル</h3>
+      <div id="tileGrid"></div>
+      <div class="tile-legend">早=6時　昼=12時　夕=18時　夜=24時（0時）。マスをクリックするとその日の詳細に移動します。</div>
+    </div>
+
+    <div class="detail" id="detailPanel" style="display:none;">
+      <h3 id="detailDate">—</h3>
+      <div class="conf-line" id="detailConf">—</div>
+      <div class="summit-flags" id="summitFlags"></div>
+
+      <div class="elev-profile" id="elevProfile" style="display:none;">
+        <h4>標高別の目安（<span id="elevProfileDate"></span>）</h4>
+        <div class="elev-controls">
+          登山口の標高
+          <input id="baseElevInput" type="number" step="50">
+          m
+          <button class="chip" id="refreshProfile">再計算</button>
+        </div>
+        <div id="elevProfileBody"></div>
+        <div class="elev-note">気温は同じ地点で標高だけを変えて算出した目安です。谷筋・尾根筋など横方向の地形差は反映されません。降水の可能性は「凍結高度が各標高帯を下回っている時間の割合」から雨/雪を推定した目安です。</div>
+      </div>
+
+      <div class="chart-wrap">
+        <div class="view-toggle">
+          <button class="chip active" id="toggleChartBtn">グラフ表示</button>
+          <button class="chip" id="toggleMapBtn">地図表示</button>
+        </div>
+        <div id="hourlyChart"></div>
+        <div id="dayMap"></div>
+        <div class="chart-legend" id="mapStatus" style="display:none;"></div>
+        <div class="chart-legend" id="chartLegend">— 気温（左軸・線）　▮ 降水確率（右軸・棒、最大100%）</div>
+        <div class="chart-legend" id="mapLegend" style="display:none;">マス目の色＝天気の種類、濃さ＝降水確率の高さ。地図を動かすと、その中心を基準に取得し直します（山頂の目印は実際の位置に固定）。</div>
+      </div>
+      <div class="hourly-wrap">
+        <table class="hourly" id="hourlyTable"></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  データ提供: Open-Meteo（気象庁モデル / ECMWF・GFS等のブレンドモデル）。予報は8日目以降、地形が複雑な山岳では特に精度が下がります。稜線での強風・雷・急な天候悪化は現地の掲示・気象庁の山岳気象情報・登山届と合わせて判断してください。
+</footer>
+
+<script>
+const PRESETS = [
+  {name:"富士山", lat:35.3606, lon:138.7274, elevation:3776},
+  {name:"槍ヶ岳", lat:36.3406, lon:137.6486, elevation:3180},
+  {name:"奥穂高岳", lat:36.2896, lon:137.6467, elevation:3190},
+  {name:"立山（雄山）", lat:36.5758, lon:137.6197, elevation:3003},
+  {name:"白馬岳", lat:36.7589, lon:137.7592, elevation:2932},
+  {name:"八ヶ岳（赤岳）", lat:35.9714, lon:138.3697, elevation:2899},
+  {name:"燕岳", lat:36.3900, lon:137.6975, elevation:2763},
+  {name:"大雪山（旭岳）", lat:43.6636, lon:142.8508, elevation:2291},
+  {name:"谷川岳", lat:36.7936, lon:138.9319, elevation:1963},
+  {name:"丹沢（塔ノ岳）", lat:35.4508, lon:139.1758, elevation:1491},
+];
+
+let current = null; // {name, lat, lon, elevation}
+let dailyData = [];
+let hourlyByDate = {};
+
+const chipsEl = document.getElementById('presetChips');
+PRESETS.forEach(p=>{
+  const b = document.createElement('button');
+  b.className='chip'; b.textContent=p.name;
+  b.onclick = ()=>selectMountain(p);
+  chipsEl.appendChild(b);
+});
+
+const searchInput = document.getElementById('mtSearch');
+const suggestionsEl = document.getElementById('suggestions');
+let searchTimer=null;
+searchInput.addEventListener('input', ()=>{
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  if(q.length<1){ suggestionsEl.style.display='none'; return; }
+  searchTimer = setTimeout(()=>doSearch(q), 350);
+});
+document.addEventListener('click', (e)=>{
+  if(!suggestionsEl.contains(e.target) && e.target!==searchInput){
+    suggestionsEl.style.display='none';
+  }
+});
+
+async function doSearch(q){
+  suggestionsEl.style.display='block';
+  suggestionsEl.innerHTML = '<div style="padding:9px 12px;color:var(--ink-soft);">検索中…</div>';
+  try{
+    const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=ja&format=json`;
+    const res = await fetch(url);
+    if(!res.ok){
+      suggestionsEl.innerHTML = `<div style="padding:9px 12px;color:var(--warn);">検索エラー（HTTP ${res.status}）</div>`;
+      return;
+    }
+    const data = await res.json();
+    if(!data.results || data.results.length===0){
+      suggestionsEl.innerHTML = '<div style="padding:9px 12px;color:var(--ink-soft);">見つかりませんでした。ひらがな・ローマ字や近くの地名でも試してみてください。</div>';
+      return;
+    }
+    suggestionsEl.innerHTML='';
+    data.results.forEach(r=>{
+      const div = document.createElement('div');
+      const region = [r.admin1, r.country].filter(Boolean).join(' / ');
+      div.textContent = `${r.name}${region ? ' — '+region : ''}（標高目安 ${Math.round(r.elevation||0)}m）`;
+      div.onclick = ()=>{
+        selectMountain({name:r.name, lat:r.latitude, lon:r.longitude, elevation:Math.round(r.elevation||0)});
+        suggestionsEl.style.display='none';
+        searchInput.value='';
+      };
+      suggestionsEl.appendChild(div);
+    });
+  }catch(e){
+    console.error('geocoding search failed', e);
+    suggestionsEl.innerHTML = `<div style="padding:9px 12px;color:var(--warn);">検索に失敗しました（${e.message}）</div>`;
+  }
+}
+
+document.getElementById('applyElev').onclick = ()=>{
+  if(!current) return;
+  const v = parseInt(document.getElementById('elevInput').value,10);
+  if(!isNaN(v)){
+    current.elevation = v;
+    fetchForecast(current);
+  }
+};
+
+function selectMountain(p){
+  current = {...p};
+  document.querySelectorAll('#presetChips .chip').forEach(c=>{
+    c.classList.toggle('active', c.textContent===p.name);
+  });
+  fetchForecast(current);
+}
+
+const WEATHER_ICONS = {
+  clear: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><circle cx="20" cy="20" r="8"/><g stroke-linecap="round"><line x1="20" y1="3" x2="20" y2="8"/><line x1="20" y1="32" x2="20" y2="37"/><line x1="3" y1="20" x2="8" y2="20"/><line x1="32" y1="20" x2="37" y2="20"/><line x1="8" y1="8" x2="11.5" y2="11.5"/><line x1="28.5" y1="28.5" x2="32" y2="32"/><line x1="8" y1="32" x2="11.5" y2="28.5"/><line x1="28.5" y1="11.5" x2="32" y2="8"/></g></svg>`,
+  partly: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><circle cx="15" cy="14" r="6"/><path d="M10,26 h16 a6,6 0 0 0 0,-12 a8,8 0 0 0 -15,-2 a7,7 0 0 0 -1,14z" fill="none"/></svg>`,
+  cloudy: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><path d="M8,27 h22 a7,7 0 0 0 0,-14 a9,9 0 0 0 -17,-2 a8,8 0 0 0 -5,16z"/></svg>`,
+  fog: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6" stroke-linecap="round"><line x1="6" y1="15" x2="34" y2="15"/><line x1="6" y1="21" x2="34" y2="21"/><line x1="6" y1="27" x2="28" y2="27"/></svg>`,
+  rain: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><path d="M8,20 h22 a7,7 0 0 0 0,-14 a9,9 0 0 0 -17,-2 a8,8 0 0 0 -5,16z"/><g stroke-linecap="round"><line x1="14" y1="27" x2="11" y2="35"/><line x1="21" y1="27" x2="18" y2="35"/><line x1="28" y1="27" x2="25" y2="35"/></g></svg>`,
+  snow: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><path d="M8,19 h22 a7,7 0 0 0 0,-14 a9,9 0 0 0 -17,-2 a8,8 0 0 0 -5,16z"/><g><circle cx="14" cy="32" r="1.4" fill="#2E3A2F" stroke="none"/><circle cx="21" cy="30" r="1.4" fill="#2E3A2F" stroke="none"/><circle cx="28" cy="32" r="1.4" fill="#2E3A2F" stroke="none"/></g></svg>`,
+  thunder: `<svg viewBox="0 0 40 40" fill="none" stroke="#2E3A2F" stroke-width="1.6"><path d="M8,19 h22 a7,7 0 0 0 0,-14 a9,9 0 0 0 -17,-2 a8,8 0 0 0 -5,16z"/><polygon points="21,24 15,34 20,34 17,40 27,28 21,28" fill="#B6472E" stroke="none"/></svg>`,
+};
+function iconForCode(code){
+  if(code===0) return WEATHER_ICONS.clear;
+  if([1,2].includes(code)) return WEATHER_ICONS.partly;
+  if(code===3) return WEATHER_ICONS.cloudy;
+  if([45,48].includes(code)) return WEATHER_ICONS.fog;
+  if([51,53,55,61,63,65,80,81,82].includes(code)) return WEATHER_ICONS.rain;
+  if([66,67,71,73,75,77,85,86].includes(code)) return WEATHER_ICONS.snow;
+  if([95,96,99].includes(code)) return WEATHER_ICONS.thunder;
+  return WEATHER_ICONS.partly;
+}
+function labelForCode(code){
+  const map = {0:"快晴",1:"晴れ",2:"晴れ時々曇り",3:"曇り",45:"霧",48:"霧氷",51:"霧雨",53:"霧雨",55:"霧雨",
+    61:"雨",63:"雨",65:"強い雨",66:"みぞれ",67:"強いみぞれ",71:"雪",73:"雪",75:"大雪",77:"細氷",
+    80:"にわか雨",81:"にわか雨",82:"激しいにわか雨",85:"にわか雪",86:"にわか雪",95:"雷雨",96:"雷雨(雹)",99:"雷雨(雹)"};
+  return map[code] || "—";
+}
+
+function fmtDate(iso){
+  const d = new Date(iso+"T00:00:00");
+  const dows = ["日","月","火","水","木","金","土"];
+  return {dow: dows[d.getDay()], md: `${d.getMonth()+1}/${d.getDate()}`};
+}
+
+const DAILY_VARS = ["weather_code","temperature_2m_max","temperature_2m_min",
+  "precipitation_probability_max","wind_speed_10m_max","wind_gusts_10m_max","sunrise","sunset"];
+const HOURLY_VARS = ["temperature_2m","precipitation_probability","weather_code",
+  "wind_speed_10m","wind_gusts_10m","freezing_level_height","cloud_cover"];
+
+function buildUrl(p, modelParam, days){
+  let url = `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}`
+    + `&elevation=${p.elevation}`
+    + `&daily=${DAILY_VARS.join(',')}`
+    + `&hourly=${HOURLY_VARS.join(',')}`
+    + `&timezone=Asia%2FTokyo&forecast_days=${days}`;
+  if(modelParam) url += `&models=${modelParam}`;
+  return url;
+}
+
+// Fetch a single-model forecast. Returns null (and logs) on any failure
+// instead of throwing, so one bad model never blocks the other.
+async function fetchOne(p, modelParam, days, label){
+  const url = buildUrl(p, modelParam, days);
+  try{
+    const res = await fetch(url);
+    const body = await res.json().catch(()=>null);
+    if(!res.ok){
+      const reason = (body && body.reason) ? body.reason : `HTTP ${res.status}`;
+      console.warn(`[${label}] request failed:`, reason, url);
+      return {ok:false, reason};
+    }
+    return {ok:true, data: body};
+  }catch(e){
+    console.warn(`[${label}] network error:`, e, url);
+    return {ok:false, reason: e.message};
+  }
+}
+
+async function fetchForecast(p){
+  document.getElementById('status').textContent = `${p.name} の予報を取得中…`;
+  document.getElementById('appBody').style.display='none';
+
+  // Two independent requests: JMA (Japan high-res, shorter range) and the
+  // global blended model (full 16 days). Either can fail without breaking
+  // the other.
+  const [jmaRes, bestRes] = await Promise.all([
+    fetchOne(p, 'jma_seamless', 10, 'JMA'),
+    fetchOne(p, null, 16, 'best_match'),
+  ]);
+
+  if(!bestRes.ok && !jmaRes.ok){
+    const reason = bestRes.reason || jmaRes.reason || '不明なエラー';
+    const looksBlocked = /failed to fetch/i.test(reason) || /networkerror/i.test(reason);
+    document.getElementById('status').innerHTML =
+      `取得に失敗しました（${reason}）。` +
+      (looksBlocked
+        ? '<br>このファイルをチャット内のプレビューで開いている場合、外部APIへの通信がブロックされることがあります。<b>ファイルをダウンロードして、Claudeの外のブラウザで直接開いて</b>みてください。'
+        : '時間をおいて再度お試しください。');
+    return;
+  }
+
+  // Prefer best_match as the backbone since it always covers 16 days;
+  // fill in JMA values where available for better near-term accuracy.
+  const primary = bestRes.ok ? bestRes.data : jmaRes.data;
+  const secondary = bestRes.ok ? (jmaRes.ok ? jmaRes.data : null) : null;
+
+  buildDaily(primary, secondary);
+  buildHourlyIndex(primary, secondary);
+
+  document.getElementById('mtName').textContent = p.name;
+  document.getElementById('mtElev').textContent = p.elevation;
+  document.getElementById('mtCoord').textContent = `${p.lat.toFixed(3)}, ${p.lon.toFixed(3)}`;
+  document.getElementById('elevInput').value = p.elevation;
+  document.getElementById('baseElevInput').value = Math.max(200, p.elevation-1200);
+  document.getElementById('appBody').style.display='block';
+  if(leafletMap){ leafletMap.setView([p.lat, p.lon], leafletMap.getZoom() || 10); }
+  document.getElementById('status').textContent = (!jmaRes.ok)
+    ? '（気象庁モデルは現在取得できないため、国際モデルのみで表示しています）'
+    : '';
+
+  renderDays();
+  renderWeatherTiles();
+  if(dailyData.length>0) showDetail(0);
+}
+
+function indexByDate(timeArray){
+  const map = {};
+  (timeArray||[]).forEach((t,i)=>{ map[t]=i; });
+  return map;
+}
+
+function buildDaily(primary, secondary){
+  dailyData = [];
+  const daily = primary.daily;
+  const secDaily = secondary ? secondary.daily : null;
+  const secIndex = secDaily ? indexByDate(secDaily.time) : null;
+  const n = daily.time.length;
+
+  for(let i=0;i<n;i++){
+    const date = daily.time[i];
+    const j = secIndex ? secIndex[date] : undefined;
+    const useSec = (j!==undefined) && secDaily.weather_code[j]!==null && secDaily.weather_code[j]!==undefined;
+    const src = useSec ? secDaily : daily;
+    const k = useSec ? j : i;
+    dailyData.push({
+      date,
+      code: src.weather_code ? src.weather_code[k] : null,
+      tmax: src.temperature_2m_max ? src.temperature_2m_max[k] : null,
+      tmin: src.temperature_2m_min ? src.temperature_2m_min[k] : null,
+      pop: src.precipitation_probability_max ? src.precipitation_probability_max[k] : null,
+      wind: src.wind_speed_10m_max ? src.wind_speed_10m_max[k] : null,
+      gust: src.wind_gusts_10m_max ? src.wind_gusts_10m_max[k] : null,
+      src: useSec ? 'jma' : 'best',
+      idx: i
+    });
+  }
+}
+
+function buildHourlyIndex(primary, secondary){
+  hourlyByDate = {};
+  const h = primary.hourly;
+  const secH = secondary ? secondary.hourly : null;
+  const secIndex = secH ? indexByDate(secH.time) : null;
+  const n = h.time.length;
+
+  for(let i=0;i<n;i++){
+    const t = h.time[i];
+    const dateKey = t.slice(0,10);
+    if(!hourlyByDate[dateKey]) hourlyByDate[dateKey]=[];
+    const j = secIndex ? secIndex[t] : undefined;
+    const useSec = (j!==undefined) && secH.temperature_2m[j]!==null && secH.temperature_2m[j]!==undefined;
+    const src = useSec ? secH : h;
+    const k = useSec ? j : i;
+    hourlyByDate[dateKey].push({
+      time: t.slice(11,16),
+      temp: src.temperature_2m ? src.temperature_2m[k] : null,
+      pop: src.precipitation_probability ? src.precipitation_probability[k] : null,
+      code: src.weather_code ? src.weather_code[k] : null,
+      wind: src.wind_speed_10m ? src.wind_speed_10m[k] : null,
+      gust: src.wind_gusts_10m ? src.wind_gusts_10m[k] : null,
+      freezing: src.freezing_level_height ? src.freezing_level_height[k] : null,
+      cloud: src.cloud_cover ? src.cloud_cover[k] : null,
+    });
+  }
+}
+
+function confidenceFor(i){
+  if(i<=2) return {cls:'high', label:'確度：高'};
+  if(i<=6) return {cls:'mid', label:'確度：中'};
+  return {cls:'low', label:'確度：参考程度'};
+}
+
+function renderDays(){
+  const row = document.getElementById('daysRow');
+  row.innerHTML='';
+  dailyData.forEach((d,i)=>{
+    const {dow, md} = fmtDate(d.date);
+    const conf = confidenceFor(i);
+    const card = document.createElement('div');
+    card.className='day-card' + (i===0?' active':'');
+    card.dataset.idx=i;
+    card.innerHTML = `
+      <div class="dow">${dow}曜</div>
+      <div class="date">${md}</div>
+      ${iconForCode(d.code)}
+      <div class="temps"><span class="hi">${d.tmax!==null?Math.round(d.tmax):'—'}°</span> / <span class="lo">${d.tmin!==null?Math.round(d.tmin):'—'}°</span></div>
+      <div class="pop">降水 ${d.pop!==null?d.pop:'—'}%</div>
+      <div class="conf ${conf.cls}">${conf.label}</div>
+      <div class="src">${d.src==='jma' ? '気象庁モデル' : '国際モデル'}</div>
+    `;
+    card.onclick = ()=>showDetail(i);
+    row.appendChild(card);
+  });
+}
+
+function hourlyChartSVG(hours){
+  const valid = hours.filter(h=>h.temp!==null && h.temp!==undefined);
+  if(valid.length<2) return '<p style="font-size:12.5px;color:var(--ink-soft);padding:8px 10px;">この日はグラフ化できる時間別データがありません。</p>';
+
+  const W=780, H=170, padL=32, padR=14, padT=14, padB=22;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const n=hours.length;
+  const temps = valid.map(h=>h.temp);
+  let tmin=Math.min(...temps), tmax=Math.max(...temps);
+  if(tmax-tmin<4){ const mid=(tmax+tmin)/2; tmin=mid-2; tmax=mid+2; }
+  const range = tmax-tmin;
+  const xStep = innerW/((n-1)||1);
+  const xAt = i => padL + i*xStep;
+  const yAt = t => padT + innerH - ((t-tmin)/range)*innerH;
+
+  let bars='';
+  hours.forEach((h,i)=>{
+    const pop = h.pop||0;
+    const barH = (pop/100)*innerH;
+    bars += `<rect x="${(xAt(i)-3).toFixed(1)}" y="${(padT+innerH-barH).toFixed(1)}" width="6" height="${barH.toFixed(1)}" fill="#4C6B7A" opacity="0.30"/>`;
+  });
+
+  let path='';
+  hours.forEach((h,i)=>{
+    if(h.temp===null || h.temp===undefined) return;
+    const cmd = path==='' ? 'M' : 'L';
+    path += `${cmd}${xAt(i).toFixed(1)},${yAt(h.temp).toFixed(1)} `;
+  });
+
+  let labels='';
+  hours.forEach((h,i)=>{
+    if(i % 3 === 0){
+      labels += `<text x="${xAt(i).toFixed(1)}" y="${H-6}" font-size="10" fill="#55604F" text-anchor="middle">${h.time}</text>`;
+    }
+  });
+
+  const yLabelTop = `<text x="2" y="${(yAt(tmax)+4).toFixed(1)}" font-size="10" fill="#55604F">${Math.round(tmax)}°</text>`;
+  const yLabelBottom = `<text x="2" y="${(yAt(tmin)+4).toFixed(1)}" font-size="10" fill="#55604F">${Math.round(tmin)}°</text>`;
+  const gridTop = `<line x1="${padL}" y1="${yAt(tmax).toFixed(1)}" x2="${W-padR}" y2="${yAt(tmax).toFixed(1)}" stroke="#2E3A2F" stroke-opacity="0.15" stroke-dasharray="2,3"/>`;
+  const gridBottom = `<line x1="${padL}" y1="${yAt(tmin).toFixed(1)}" x2="${W-padR}" y2="${yAt(tmin).toFixed(1)}" stroke="#2E3A2F" stroke-opacity="0.15" stroke-dasharray="2,3"/>`;
+
+  const dots = hours.map((h,i)=>{
+    if(h.temp===null || h.temp===undefined) return '';
+    return `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(h.temp).toFixed(1)}" r="2.2" fill="#2E3A2F"/>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:150px;display:block;">
+    ${gridTop}${gridBottom}
+    ${bars}
+    <path d="${path.trim()}" fill="none" stroke="#2E3A2F" stroke-width="2"/>
+    ${dots}
+    ${labels}
+    ${yLabelTop}${yLabelBottom}
+  </svg>`;
+}
+
+function computeBands(baseElev, topElev, count){
+  if(baseElev>=topElev) baseElev = Math.max(200, topElev-800);
+  const bands=[];
+  for(let i=0;i<count;i++){
+    const frac = i/(count-1);
+    bands.push(Math.round(topElev - frac*(topElev-baseElev)));
+  }
+  return bands; // descending, summit first
+}
+
+async function fetchBand(lat, lon, elevation, date){
+  const vars = ['temperature_2m','precipitation_probability','freezing_level_height'];
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&elevation=${elevation}&hourly=${vars.join(',')}`
+    + `&start_date=${date}&end_date=${date}&timezone=Asia%2FTokyo`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    return await res.json();
+  }catch(e){
+    console.warn('elevation band fetch failed', elevation, e);
+    return null;
+  }
+}
+
+async function renderElevationProfile(date){
+  if(!current) return;
+  const panel = document.getElementById('elevProfile');
+  const body = document.getElementById('elevProfileBody');
+  const dateLabel = document.getElementById('elevProfileDate');
+  const baseInput = document.getElementById('baseElevInput');
+
+  panel.style.display='block';
+  dateLabel.textContent = date;
+  body.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">計算中…</p>';
+
+  let baseElev = parseInt(baseInput.value,10);
+  if(isNaN(baseElev)){
+    baseElev = Math.max(200, current.elevation-1200);
+    baseInput.value = baseElev;
+  }
+
+  const bands = computeBands(baseElev, current.elevation, 5);
+  const results = await Promise.all(bands.map(elev=>fetchBand(current.lat, current.lon, elev, date)));
+
+  let rows='';
+  bands.forEach((elev,i)=>{
+    const data = results[i];
+    if(!data || !data.hourly || !data.hourly.temperature_2m){
+      rows += `<div class="profile-row"><span class="pe">${elev} m</span><span class="pt">—</span><span class="pp">データ取得できず</span></div>`;
+      return;
+    }
+    const temps = data.hourly.temperature_2m.filter(v=>v!==null && v!==undefined);
+    const tmax = temps.length ? Math.round(Math.max(...temps)) : null;
+    const tmin = temps.length ? Math.round(Math.min(...temps)) : null;
+    const popArr = (data.hourly.precipitation_probability||[]).filter(v=>v!==null && v!==undefined);
+    const pop = popArr.length ? Math.max(...popArr) : null;
+    const fzArr = (data.hourly.freezing_level_height||[]).filter(v=>v!==null && v!==undefined);
+
+    let phase = '降水は少なめ', phaseClass='';
+    if(pop!==null && pop>=30 && fzArr.length){
+      const belowCount = fzArr.filter(v=>elev>v).length;
+      const frac = belowCount/fzArr.length;
+      if(frac>=0.7){ phase='雪の可能性'; phaseClass='snow'; }
+      else if(frac<=0.3){ phase='雨の可能性'; phaseClass='rain'; }
+      else { phase='雨か雪（境目付近）'; phaseClass='mix'; }
+    }
+
+    rows += `<div class="profile-row ${phaseClass}">
+      <span class="pe">${elev} m</span>
+      <span class="pt">${tmax!==null?tmax+'° / '+tmin+'°':'—'}</span>
+      <span class="pp">${phase}${pop!==null?`（降水確率 最大${pop}%）`:''}</span>
+    </div>`;
+  });
+  body.innerHTML = rows;
+}
+
+let mapMode = false;
+let leafletMap = null;
+let mapLayers = {marker:null, cloudCircle:null, rainCircle:null};
+
+function ensureLeafletLoaded(callback){
+  if(window.L){ callback(); return; }
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+  document.head.appendChild(link);
+  const script = document.createElement('script');
+  script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+  script.onload = callback;
+  script.onerror = ()=>{
+    document.getElementById('dayMap').innerHTML =
+      '<p style="padding:14px;font-size:12.5px;color:var(--ink-soft);">地図ライブラリの読み込みに失敗しました。ネットワーク接続を確認してください。</p>';
+  };
+  document.head.appendChild(script);
+}
+
+function initMapIfNeeded(){
+  if(leafletMap || !current || !window.L) return;
+  leafletMap = L.map('dayMap', {zoomControl:true, attributionControl:true}).setView([current.lat, current.lon], 10);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 17,
+    attribution: 'Tiles &copy; Esri — Esri, DeLorme, NAVTEQ'
+  }).addTo(leafletMap);
+
+  let moveDebounce = null;
+  leafletMap.on('moveend', ()=>{
+    if(!mapMode || !currentSelectedDate) return;
+    clearTimeout(moveDebounce);
+    moveDebounce = setTimeout(()=>{
+      updateMapOverlay(currentSelectedDate);
+    }, 400);
+  });
+}
+
+function weatherEmojiForCode(code){
+  if(code===0) return '☀️';
+  if([1,2].includes(code)) return '🌤️';
+  if(code===3) return '☁️';
+  if([45,48].includes(code)) return '🌫️';
+  if([51,53,55,61,63,65,80,81,82].includes(code)) return '🌧️';
+  if([66,67,71,73,75,77,85,86].includes(code)) return '❄️';
+  if([95,96,99].includes(code)) return '⛈️';
+  return '🌥️';
+}
+
+function buildGridPoints(lat, lon, size, deltaDeg){
+  const half = Math.floor(size/2);
+  const points = [];
+  for(let r=-half; r<=half; r++){
+    for(let c=-half; c<=half; c++){
+      points.push({lat: lat + r*deltaDeg, lon: lon + c*deltaDeg});
+    }
+  }
+  return points;
+}
+
+async function fetchGridWeather(points, date){
+  const lats = points.map(p=>p.lat.toFixed(4)).join(',');
+  const lons = points.map(p=>p.lon.toFixed(4)).join(',');
+  const vars = ['temperature_2m','precipitation_probability','weather_code','cloud_cover'];
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}`
+    + `&hourly=${vars.join(',')}&start_date=${date}&end_date=${date}&timezone=Asia%2FTokyo`;
+  try{
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const body = await res.json();
+    return Array.isArray(body) ? body : [body];
+  }catch(e){
+    console.warn('grid weather fetch failed', e);
+    return null;
+  }
+}
+
+function pickMiddayValue(hourly, key){
+  if(!hourly || !hourly.time || !hourly[key]) return null;
+  let idx = hourly.time.findIndex(t=>t.endsWith('12:00'));
+  if(idx===-1) idx = Math.floor(hourly.time.length/2);
+  const v = hourly[key][idx];
+  return (v===null || v===undefined) ? null : v;
+}
+
+let mapTileLayers = [];
+const GRID_SIZE = 5;
+const GRID_DELTA_DEG = 0.045; // roughly 5km spacing
+
+async function updateMapOverlay(date){
+  if(!leafletMap || !current) return;
+  const day = dailyData.find(d=>d.date===date);
+  if(!day) return;
+
+  mapTileLayers.forEach(l=>leafletMap.removeLayer(l));
+  mapTileLayers = [];
+  if(mapLayers.marker){ leafletMap.removeLayer(mapLayers.marker); mapLayers.marker=null; }
+
+  const statusEl = document.getElementById('mapStatus');
+  statusEl.style.display='block';
+  statusEl.textContent = '表示中の範囲の格子点データを取得中…';
+
+  const center = leafletMap.getCenter();
+  const points = buildGridPoints(center.lat, center.lng, GRID_SIZE, GRID_DELTA_DEG);
+  const results = await fetchGridWeather(points, date);
+  statusEl.style.display='none';
+
+  points.forEach((pt,i)=>{
+    const res = results ? results[i] : null;
+    const code = res ? pickMiddayValue(res.hourly,'weather_code') : day.code;
+    const pop = res ? pickMiddayValue(res.hourly,'precipitation_probability') : day.pop;
+    const cloud = res ? pickMiddayValue(res.hourly,'cloud_cover') : null;
+
+    const bounds = [
+      [pt.lat - GRID_DELTA_DEG/2, pt.lon - GRID_DELTA_DEG/2],
+      [pt.lat + GRID_DELTA_DEG/2, pt.lon + GRID_DELTA_DEG/2]
+    ];
+    const fillOpacity = Math.min(0.85, 0.5 + ((pop||0)/100)*0.35);
+
+    const rect = L.rectangle(bounds, {
+      color:'#2E3A2F', weight:0.6,
+      fillColor: tileColorForCode(code), fillOpacity
+    }).addTo(leafletMap);
+
+    rect.bindTooltip(
+      `${labelForCode(code)} ・ 降水確率 ${pop!==null?pop+'%':'—'}${cloud!==null?' ・ 雲量 '+cloud+'%':''}`,
+      {sticky:true}
+    );
+    mapTileLayers.push(rect);
+  });
+
+  const icon = L.divIcon({
+    html: `<div style="font-size:24px;line-height:1;text-align:center;filter:drop-shadow(0 0 2px #F1EAD3);">${weatherEmojiForCode(day.code)}</div>
+           <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;text-align:center;background:#F1EAD3;border:1px solid #2E3A2F;padding:1px 4px;margin-top:2px;white-space:nowrap;">山頂 ${day.tmax!==null?Math.round(day.tmax):'—'}°/${day.tmin!==null?Math.round(day.tmin):'—'}°</div>`,
+    className:'', iconSize:[80,50], iconAnchor:[40,25]
+  });
+  mapLayers.marker = L.marker([current.lat, current.lon], {icon}).addTo(leafletMap);
+}
+
+document.getElementById('toggleChartBtn').onclick = ()=>{
+  mapMode = false;
+  document.getElementById('toggleChartBtn').classList.add('active');
+  document.getElementById('toggleMapBtn').classList.remove('active');
+  document.getElementById('hourlyChart').style.display='block';
+  document.getElementById('dayMap').style.display='none';
+  document.getElementById('chartLegend').style.display='block';
+  document.getElementById('mapLegend').style.display='none';
+};
+document.getElementById('toggleMapBtn').onclick = ()=>{
+  mapMode = true;
+  document.getElementById('toggleMapBtn').classList.add('active');
+  document.getElementById('toggleChartBtn').classList.remove('active');
+  document.getElementById('hourlyChart').style.display='none';
+  document.getElementById('dayMap').style.display='block';
+  document.getElementById('chartLegend').style.display='none';
+  document.getElementById('mapLegend').style.display='block';
+  ensureLeafletLoaded(()=>{
+    initMapIfNeeded();
+    setTimeout(()=>{
+      if(leafletMap) leafletMap.invalidateSize();
+      updateMapOverlay(currentSelectedDate);
+    }, 30);
+  });
+};
+
+function tileColorForCode(code){
+  if(code===0) return '#EDE0B9';
+  if([1,2].includes(code)) return '#D9D2BC';
+  if(code===3) return '#C9C7BE';
+  if([45,48].includes(code)) return '#C4C7C2';
+  if([51,53,55,61,63,65,80,81,82].includes(code)) return '#A9C0C9';
+  if([66,67,71,73,75,77,85,86].includes(code)) return '#E4EDF0';
+  if([95,96,99].includes(code)) return '#C98B7A';
+  return '#D9D2BC';
+}
+
+function renderWeatherTiles(){
+  const grid = document.getElementById('tileGrid');
+  const slots = [['06:00','早'],['12:00','昼'],['18:00','夕'],['00:00','夜']];
+  const mdLabels = dailyData.map(d=>fmtDate(d.date).md);
+
+  let html = '<div></div>';
+  dailyData.forEach((d,i)=>{
+    html += `<div class="tile-day-label">${mdLabels[i]}</div>`;
+  });
+
+  slots.forEach(([hhmm,label])=>{
+    html += `<div class="tile-row-label">${label}</div>`;
+    dailyData.forEach((d,i)=>{
+      const hours = hourlyByDate[d.date] || [];
+      const entry = hours.find(h=>h.time===hhmm);
+      const code = entry ? entry.code : d.code;
+      const temp = entry ? entry.temp : d.tmax;
+      const pop = entry ? entry.pop : d.pop;
+      const bg = tileColorForCode(code);
+      const tempTxt = (temp!==null && temp!==undefined) ? Math.round(temp)+'°' : '—';
+      const popTxt = (pop!==null && pop!==undefined) ? pop+'%' : '—';
+      html += `<div class="tile-cell" style="background:${bg};" data-idx="${i}" title="${mdLabels[i]} ${label}: ${labelForCode(code)} / ${tempTxt} / 降水${popTxt}">${weatherEmojiForCode(code)}</div>`;
+    });
+  });
+
+  grid.innerHTML = html;
+  document.querySelectorAll('.tile-cell').forEach(c=>{
+    c.onclick = ()=> showDetail(+c.dataset.idx);
+  });
+}
+
+function showDetail(i){
+  currentSelectedDate = dailyData[i].date;
+  document.querySelectorAll('.tile-cell').forEach(c=>c.classList.toggle('sel', +c.dataset.idx===i));
+  document.querySelectorAll('.day-card').forEach(c=>c.classList.toggle('active', +c.dataset.idx===i));
+  const d = dailyData[i];
+  const {dow, md} = fmtDate(d.date);
+  const conf = confidenceFor(i);
+  document.getElementById('detailPanel').style.display='block';
+  document.getElementById('detailDate').textContent = `${md}（${dow}）の詳細`;
+  document.getElementById('detailConf').textContent =
+    `${conf.label} ・ データ元: ${d.src==='jma' ? '気象庁モデル（日本域高解像度）' : '国際モデル（ECMWF/GFS等ブレンド）'}`;
+
+  const hours = hourlyByDate[d.date] || [];
+  const summitFz = hours.map(h=>h.freezing).filter(v=>v!==null && v!==undefined);
+  const avgFz = summitFz.length ? Math.round(summitFz.reduce((a,b)=>a+b,0)/summitFz.length) : null;
+  const maxGust = Math.max(...hours.map(h=>h.gust||0), d.gust||0);
+
+  const flags = document.getElementById('summitFlags');
+  flags.innerHTML='';
+  if(avgFz!==null){
+    const belowSummit = current && avgFz < current.elevation;
+    const f = document.createElement('div');
+    f.className = 'flag' + (belowSummit ? ' cold' : '');
+    f.innerHTML = `凍結高度（目安）<b>${avgFz} m</b>${belowSummit ? '<div style="font-size:11.5px;margin-top:2px;">山頂は氷点下の可能性</div>' : ''}`;
+    flags.appendChild(f);
+  }
+  if(maxGust>0){
+    const f = document.createElement('div');
+    f.className = 'flag' + (maxGust>=15 ? ' warn' : '');
+    f.innerHTML = `最大瞬間風速<b>${Math.round(maxGust)} m/s</b>${maxGust>=15 ? '<div style="font-size:11.5px;margin-top:2px;">稜線は強風注意</div>' : ''}`;
+    flags.appendChild(f);
+  }
+  const f2 = document.createElement('div');
+  f2.className='flag';
+  f2.innerHTML = `降水確率（日中最大）<b>${d.pop!==null?d.pop+'%':'—'}</b>`;
+  flags.appendChild(f2);
+
+  document.getElementById('hourlyChart').innerHTML = hourlyChartSVG(hours);
+  renderElevationProfile(d.date);
+  if(mapMode && leafletMap) updateMapOverlay(d.date);
+
+  const table = document.getElementById('hourlyTable');
+  if(hours.length===0){
+    table.innerHTML = `<tr><td style="padding:10px 0;">この日は日次データのみです（8日目以降は時間別データを提供していません）。</td></tr>`;
+    return;
+  }
+  let rows = `<tr><th>時刻</th><th>天気</th><th>気温</th><th>降水%</th><th>風速</th><th>突風</th><th>凍結高度</th></tr>`;
+  hours.filter((h,idx)=>idx%1===0).forEach(h=>{
+    rows += `<tr>
+      <td>${h.time}</td>
+      <td class="icon-cell">${iconForCode(h.code)} ${labelForCode(h.code)}</td>
+      <td>${h.temp!==null?Math.round(h.temp)+'°':'—'}</td>
+      <td>${h.pop!==null?h.pop+'%':'—'}</td>
+      <td>${h.wind!==null?Math.round(h.wind)+'m/s':'—'}</td>
+      <td>${h.gust!==null?Math.round(h.gust)+'m/s':'—'}</td>
+      <td>${h.freezing!==null?Math.round(h.freezing)+'m':'—'}</td>
+    </tr>`;
+  });
+  table.innerHTML = rows;
+}
+
+// initial selection
+let currentSelectedDate = null;
+document.getElementById('refreshProfile').onclick = ()=>{
+  if(currentSelectedDate) renderElevationProfile(currentSelectedDate);
+};
+selectMountain(PRESETS[1]);
+</script>
+</body>
+</html>
