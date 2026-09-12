@@ -104,19 +104,29 @@
   .ridge-wrap{position:relative; margin-bottom:8px;}
   .ridge-wrap svg.ridge{display:block; width:100%; height:34px;}
 
-  .days-row{display:flex; gap:0; overflow-x:auto; padding-bottom:10px; scrollbar-width:thin;}
+  .days-row{
+    display:flex; gap:0; overflow-x:auto; padding-bottom:10px;
+    scrollbar-width:thin; scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch;
+  }
   .day-card{
     flex:0 0 128px;
     border-right:1px dashed var(--line);
     padding:10px 12px 14px;
     cursor:pointer;
     transition:background .15s;
+    scroll-snap-align:start;
   }
   .day-card:first-child{border-left:1px dashed var(--line);}
   .day-card:hover{background:var(--card-bg);}
   .day-card.active{background:var(--card-bg); box-shadow:inset 0 -3px 0 var(--moss);}
-  .day-card .dow{font-size:12px; color:var(--ink-soft);}
-  .day-card .date{font-family:'JetBrains Mono',monospace; font-size:13px; margin-bottom:6px;}
+  .day-card .date-line{
+    font-family:'JetBrains Mono',monospace; font-weight:600; font-size:15px;
+    margin-bottom:6px; color:var(--ink); white-space:nowrap;
+  }
+  .day-card .date-line .dow-tag{font-weight:500; font-size:13px; margin-left:2px;}
+  .day-card .date-line.sat{color:var(--cold);}
+  .day-card .date-line.sun{color:var(--warn);}
   .day-card svg.icon{width:34px; height:34px; display:block; margin:2px 0 6px;}
   .day-card .temps{font-family:'JetBrains Mono',monospace; font-size:14px;}
   .day-card .temps .hi{font-weight:600;}
@@ -213,6 +223,12 @@
   }
   @media (max-width:640px){
     .selected-panel{flex-direction:column; align-items:flex-start;}
+    .day-card{flex-basis:104px; padding:10px 10px 12px;}
+    .day-card .date-line{font-size:16px;}
+    .day-card .date-line .dow-tag{display:block; font-size:12px; margin-left:0; margin-top:1px;}
+    .day-card .temps{font-size:15px;}
+    .day-card svg.icon{width:30px; height:30px;}
+    #tileGrid{grid-template-columns: 28px repeat(16, minmax(30px,1fr));}
   }
 </style>
 </head>
@@ -582,12 +598,13 @@ function renderDays(){
   dailyData.forEach((d,i)=>{
     const {dow, md} = fmtDate(d.date);
     const conf = confidenceFor(i);
+    const dow_i = new Date(d.date+"T00:00:00").getDay();
+    const weekendClass = dow_i===0 ? 'sun' : (dow_i===6 ? 'sat' : '');
     const card = document.createElement('div');
     card.className='day-card' + (i===0?' active':'');
     card.dataset.idx=i;
     card.innerHTML = `
-      <div class="dow">${dow}曜</div>
-      <div class="date">${md}</div>
+      <div class="date-line ${weekendClass}">${md}<span class="dow-tag">(${dow})</span></div>
       ${iconForCode(d.code)}
       <div class="temps"><span class="hi">${d.tmax!==null?Math.round(d.tmax):'—'}°</span> / <span class="lo">${d.tmin!==null?Math.round(d.tmin):'—'}°</span></div>
       <div class="pop">降水 ${d.pop!==null?d.pop:'—'}%</div>
