@@ -521,6 +521,12 @@
   .next-btn-wrap:empty{
     margin: 0;
   }
+  .next-btn-wrap:not(:empty){
+    position: sticky;
+    bottom: 10px;
+    z-index: 15;
+    margin: 10px 0;
+  }
   @keyframes nextBtnIn{
     0%   { opacity: 0; transform: translateY(6px) scale(0.97); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -537,7 +543,8 @@
     padding: 14px;
     border-radius: 12px;
     cursor:pointer;
-    margin: 14px 0 4px;
+    margin: 0;
+    box-shadow: 0 10px 28px -8px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.15);
     animation: nextBtnIn 0.25s ease-out;
   }
   .next-question-btn:active{
@@ -3234,6 +3241,14 @@ function showNextButton(isRoundEnd, onNext){
   wrap.innerHTML = `<button class="next-question-btn" id="next-question-btn">${isRoundEnd ? "結果を見る →" : "次の問題へ →"}</button>`;
   const btn = document.getElementById("next-question-btn");
   if(btn) btn.onclick = onNext;
+  // Belt-and-suspenders: with many choices (10/20択) the button can end up
+  // far down the page. Sticky positioning should keep it visible, but also
+  // nudge the viewport so it's definitely on screen right away.
+  if(wrap.scrollIntoView){
+    try{
+      wrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }catch(e){ /* ignore in unsupported environments */ }
+  }
 }
 
 function spawnConfetti(container, big){
@@ -3262,7 +3277,14 @@ function spawnConfetti(container, big){
   }
 }
 
-function computePointsDelta(isCorrect, elapsedSec){
+const SCORE_MULTIPLIERS = {
+  4:  { correct: 0.5, wrong: 2   },
+  8:  { correct: 1,   wrong: 1   },
+  10: { correct: 1.1, wrong: 0.9 },
+  20: { correct: 2,   wrong: 0.5 },
+};
+
+function computeBasePoints(isCorrect, elapsedSec){
   if(!isCorrect) return -10;
   if(elapsedSec <= 5) return 10;
   if(elapsedSec <= 10) return 5;
@@ -3270,8 +3292,15 @@ function computePointsDelta(isCorrect, elapsedSec){
   return 1;
 }
 
+function computePointsDelta(isCorrect, elapsedSec, choicesUsed){
+  const base = computeBasePoints(isCorrect, elapsedSec);
+  const m = SCORE_MULTIPLIERS[choicesUsed] || { correct: 1, wrong: 1 };
+  const mult = isCorrect ? m.correct : m.wrong;
+  return Math.round(base * mult * 10) / 10;
+}
+
 function applyScore(entry, pointsDelta){
-  entry.score = Math.max(SCORE_MIN, entry.score + pointsDelta);
+  entry.score = Math.round(Math.max(SCORE_MIN, entry.score + pointsDelta) * 10) / 10;
   let justGraduated = false;
   if(entry.score >= GRADUATION_SCORE){
     entry.score = GRADUATION_SCORE;
@@ -3287,7 +3316,7 @@ async function answer(selected, btnEl){
   const isCorrect = selected === correctAnswer;
   const entry = ensureProgress(currentWord.id);
   const elapsedSec = (Date.now() - (questionStartTime || Date.now())) / 1000;
-  const pointsDelta = computePointsDelta(isCorrect, elapsedSec);
+  const pointsDelta = computePointsDelta(isCorrect, elapsedSec, choiceCount);
   const justGraduated = applyScore(entry, pointsDelta);
 
   const allButtons = document.querySelectorAll(".choice");
@@ -3362,7 +3391,7 @@ async function answerQuote(selected, btnEl){
   const isCorrect = selected === correctAnswer;
   const entry = ensureQuoteProgress(currentQuote.id);
   const elapsedSec = (Date.now() - (quoteQuestionStartTime || Date.now())) / 1000;
-  const pointsDelta = computePointsDelta(isCorrect, elapsedSec);
+  const pointsDelta = computePointsDelta(isCorrect, elapsedSec, choiceCount);
   const justGraduated = applyScore(entry, pointsDelta);
 
   const allButtons = document.querySelectorAll(".choice");
