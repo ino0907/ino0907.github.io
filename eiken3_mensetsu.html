@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>英検3級 面接模擬試験</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F6F1E4; --paper-dark:#EDE5D2; --ink:#2B2620; --navy:#233752;
+  --teal:#2F7A6E; --gold:#B9812E; --line:#C9BFA6;
+  --bg:#E7E1D1; --card-shadow: 0 10px 30px rgba(35,55,82,.15);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141C28; --paper:#1E2A38; --paper-dark:#233247; --ink:#EDE7D8;
+    --navy:#8FB4E0; --teal:#6FCBB8; --gold:#E0AE5D; --line:#3B4A5F;
+    --card-shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141C28; --paper:#1E2A38; --paper-dark:#233247; --ink:#EDE7D8;
+  --navy:#8FB4E0; --teal:#6FCBB8; --gold:#E0AE5D; --line:#3B4A5F;
+  --card-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:'Zen Kaku Gothic New',system-ui,sans-serif; display:flex; justify-content:center;}
+#shell{width:100%; max-width:640px; min-height:100%; display:flex; flex-direction:column; padding:20px 16px 32px;}
+header{padding:4px 2px 14px;}
+h1{font-family:'Shippori Mincho',serif; font-size:1.3rem; font-weight:700; margin:0 0 2px; letter-spacing:.02em;}
+.sub{font-size:.78rem; color:var(--navy); opacity:.85; margin:0;}
+.headrow{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:2px;}
+.steps{display:flex; gap:4px; margin-top:14px; flex-wrap:wrap;}
+.step{flex:1; min-width:14px; height:6px; border-radius:3px; background:var(--line); transition:background .3s;}
+.step.done{background:var(--teal);}
+.step.now{background:var(--gold);}
+.drawer{display:none; margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:12px 14px; font-size:.82rem; line-height:1.7;}
+.drawer.show{display:block;}
+.drawer b{color:var(--gold);}
+main{flex:1; display:flex; flex-direction:column;}
+.panel{background:var(--paper); border:1px solid var(--line); border-radius:14px; box-shadow:var(--card-shadow); padding:22px 20px; margin-top:16px; position:relative;}
+.examiner{display:flex; gap:10px; align-items:flex-start; margin-bottom:14px;}
+.examiner .badge{flex:none; width:38px; height:38px; border-radius:50%; background:var(--navy); color:var(--paper); display:flex; align-items:center; justify-content:center; font-size:1.1rem;}
+.examiner .bubble{background:var(--navy); color:#fff; padding:10px 14px; border-radius:4px 14px 14px 14px; font-size:.98rem; line-height:1.55; flex:1;}
+.examiner.me{flex-direction:row-reverse;}
+.examiner.me .badge{background:var(--teal);}
+.examiner.me .bubble{background:var(--teal); border-radius:14px 4px 14px 14px;}
+.card-title{font-family:'Shippori Mincho',serif; font-size:1.15rem; font-weight:700; margin:0 0 10px; text-align:center;}
+.passage{font-family:'Shippori Mincho',serif; font-size:1.02rem; line-height:1.9; padding:14px 4px; border-top:1px dashed var(--line); border-bottom:1px dashed var(--line);}
+.scene{display:flex; justify-content:space-around; gap:10px; margin:16px 0; flex-wrap:wrap;}
+.figure{flex:1; min-width:96px; text-align:center; padding:10px 6px; background:var(--paper-dark); border-radius:10px; position:relative;}
+.figure .num{position:absolute; top:6px; left:8px; width:20px; height:20px; border-radius:50%; background:var(--gold); color:#fff; font-size:.72rem; font-weight:700; display:flex; align-items:center; justify-content:center;}
+.figure .emoji{font-size:2.1rem; line-height:1; margin-top:6px;}
+.figure .prop{font-size:1.1rem; margin-top:2px;}
+.figure .label{font-size:.74rem; margin-top:6px; color:var(--navy); opacity:.9;}
+.timer{text-align:center; font-family:'Shippori Mincho',serif; font-size:2.2rem; color:var(--gold); margin:10px 0;}
+.hint{font-size:.76rem; color:var(--navy); opacity:.8; text-align:center; margin-top:-4px;}
+textarea, input[type=text]{width:100%; font-family:inherit; font-size:.98rem; padding:10px 12px; border-radius:10px; border:1px solid var(--line); background:var(--paper-dark); color:var(--ink); resize:vertical; min-height:70px;}
+input[type=text]{min-height:auto;}
+p.note{font-size:.9rem; line-height:1.7; margin:0 0 4px;}
+.row{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+button{font-family:'Zen Kaku Gothic New',sans-serif; font-size:.92rem; font-weight:500; padding:11px 18px; border-radius:10px; border:1px solid transparent; cursor:pointer; transition:opacity .15s, transform .1s;}
+button:active{transform:scale(.98);}
+.primary{background:var(--navy); color:#fff; flex:1;}
+.primary:hover{opacity:.92;}
+.ghost{background:transparent; border-color:var(--line); color:var(--ink);}
+.icon-btn{background:var(--paper-dark); border:1px solid var(--line); color:var(--ink); padding:8px 12px; font-size:.85rem;}
+.icon-btn.on{background:var(--teal); color:#fff; border-color:var(--teal);}
+.model{margin-top:10px; font-size:.85rem; background:var(--paper-dark); border-left:3px solid var(--teal); padding:8px 10px; border-radius:6px; display:none;}
+.model.show{display:block;}
+.transcript{display:flex; flex-direction:column; gap:12px; margin-top:6px;}
+.turn{border-bottom:1px dashed var(--line); padding-bottom:10px;}
+.turn .qlabel{font-size:.72rem; color:var(--gold); font-weight:700;}
+.turn .qtext{font-size:.9rem; margin:2px 0 6px;}
+.turn .atext{font-size:.9rem; background:var(--paper-dark); border-radius:8px; padding:6px 10px;}
+footer{text-align:center; font-size:.7rem; opacity:.55; margin-top:22px; line-height:1.6;}
+@media (prefers-reduced-motion: reduce){ *{transition:none !important;} }
+</style>
+</head>
+<body>
+<div id="shell">
+  <header>
+    <h1>英検3級 面接 模擬練習</h1>
+    <div class="headrow">
+      <p class="sub">本番の流れと言い回しに沿って練習しよう(公式サンプルではありません)</p>
+    </div>
+    <div class="headrow" style="margin-top:8px;">
+      <button class="icon-btn" id="helpBtn" onclick="toggleDrawer()" style="flex:none;">🆘 困ったときは</button>
+      <button class="icon-btn" id="muteBtn" onclick="toggleMute()" style="flex:none;">🔊 音声ON</button>
+    </div>
+    <div class="drawer" id="helpDrawer">
+      <b>Pardon?</b> — 面接委員の言葉が聞き取れなかったら、間を置かずすぐに言いましょう。<br>
+      <b>Well, … / Let me see.</b> — 考える時間がほしいときに。無言になるのはNGです。<br>
+      <b>Could you say that again?</b> — 質問の意味がわからないときに、もう一度言ってもらいます。<br>
+      <b>アティチュード</b> — 笑顔・大きな声・アイコンタクトも採点対象です。黙り込まず、間違えても Excuse me. と言い直せば大丈夫。
+    </div>
+    <div class="steps" id="steps"></div>
+  </header>
+  <main><div class="panel" id="panel"></div></main>
+  <footer>音声読み上げ・音声入力はブラウザの対応状況により使えない場合があります。公式の面接の流れは日本英語検定協会のサイトでも確認できます。</footer>
+</div>
+<script>
+const CARDS = [
+ { title:"Helping at Home",
+   passage:"Many families today are busy, so parents often ask their children to help with the housework. For example, some children wash the dishes or do the laundry after dinner. By helping at home, children learn to be more responsible.",
+   figures:[
+     {num:1, emoji:'👦', label:'the boy', prop:'🍽️'},
+     {num:2, emoji:'👧', label:'the girl', prop:'🧺'},
+     {num:3, emoji:'🧑', label:'the father', prop:'📰'}
+   ],
+   q1:"Why do parents ask their children to help with the housework?",
+   a1:"They ask them because it helps the children learn to be more responsible.",
+   q2:"Look at the boy. What is he doing?",
+   a2:"He is washing the dishes.",
+   q3:"Now look at the girl. What does she have in her hand?",
+   a3:"She has a laundry basket in her hand.",
+   q4:"What do you do to help at home?",
+   a4:"I usually ~. の形で、実際にしている手伝いを具体的に答えましょう。",
+   q5:{ q:"Do you like cooking?", type:"yesno", yesFollow:"Please tell me more.", noFollow:"What do you like to do at home?" },
+   q5hint:"Yesの場合は好きな料理や理由を、Noの場合は家で好きなことを続けて答えましょう。"
+ },
+ { title:"A New Bakery Near the Station",
+   passage:"A new bakery opened near the station last month. It is popular because the bread is fresh and not expensive. Many people stop by on their way to work, and the shop is usually full on weekends.",
+   figures:[
+     {num:1, emoji:'🧑‍🦱', label:'the man', prop:'🥐'},
+     {num:2, emoji:'👩', label:'the woman', prop:'🛍️'},
+     {num:3, emoji:'🧒', label:'the boy', prop:'🥪'}
+   ],
+   q1:"Why is the bakery popular?",
+   a1:"It is popular because the bread is fresh and not expensive.",
+   q2:"Look at the man. What is he doing?",
+   a2:"He is buying some bread.",
+   q3:"Now look at the woman. What does she have in her hand?",
+   a3:"She has a shopping bag in her hand.",
+   q4:"What is your favorite food?",
+   a4:"My favorite food is ~. の後に、好きな理由を続けましょう。",
+   q5:{ q:"Which do you like better, bread or rice?", type:"which", follow:"Why?" },
+   q5hint:"I like ~ better. の後、Because ... で理由を答えましょう。"
+ },
+ { title:"The Library's Reading Event",
+   passage:"The city library holds a reading event for children every Saturday. A volunteer reads a picture book aloud, and afterward the children can talk about their favorite characters. About twenty children usually join for free.",
+   figures:[
+     {num:1, emoji:'👩‍🦳', label:'the volunteer', prop:'📖'},
+     {num:2, emoji:'🧒', label:'the boy', prop:'🖍️'},
+     {num:3, emoji:'👧', label:'the girl', prop:'🎒'}
+   ],
+   q1:"What can the children do after the story?",
+   a1:"They can talk about their favorite characters after the story.",
+   q2:"Look at the volunteer. What is she doing?",
+   a2:"She is reading a picture book to the children.",
+   q3:"Now look at the boy. What does he have in his hand?",
+   a3:"He has a crayon in his hand.",
+   q4:"Do you often go to the library?",
+   a4:"Yes, I do. / No, I don't. の後に、頻度や理由を続けましょう。",
+   q5:{ q:"Do you like reading books?", type:"yesno", yesFollow:"Please tell me more.", noFollow:"What do you like to do in your free time?" },
+   q5hint:"Yesの場合は好きなジャンルを、Noの場合は自由時間の過ごし方を続けて答えましょう。"
+ }
+];
+const PHASES = ['入室','受渡','着席','あいさつ','受取','黙読','音読','Q1','Q2','Q3','裏返す','Q4','Q5','返却','退室','終了'];
+let state = { phase:0, cardIdx:0, name:'', answers:[], ttsOn:true, greet:{step:0}, q5stage:0, q5yes:false, q5firstAns:'' };
+const panel = document.getElementById('panel');
+const stepsEl = document.getElementById('steps');
+
+function toggleDrawer(){ document.getElementById('helpDrawer').classList.toggle('show'); }
+function toggleMute(){
+  state.ttsOn = !state.ttsOn;
+  const btn = document.getElementById('muteBtn');
+  if(btn) btn.textContent = state.ttsOn ? '🔊 音声ON' : '🔇 音声OFF';
+  if(!state.ttsOn && 'speechSynthesis' in window){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+}
+
+function renderSteps(){
+  stepsEl.innerHTML = PHASES.map((p,i)=>{
+    const cls = i < state.phase ? 'done' : (i===state.phase ? 'now':'');
+    return `<div class="step ${cls}" title="${p}"></div>`;
+  }).join('');
+}
+
+function autoSpeak(texts){
+  if(!state.ttsOn || !('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    texts.filter(Boolean).forEach(t=>{
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang='en-US'; u.rate=0.92;
+      window.speechSynthesis.speak(u);
+    });
+  }catch(e){}
+}
+function speak(text){
+  if(!state.ttsOn || !('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang='en-US'; u.rate=0.92;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function ttsBtn(text){ return `<button class="icon-btn" onclick='(${speak.toString()})(${JSON.stringify(text)})'>🔊 聞く</button>`; }
+function micInput(targetId){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return '';
+  return `<button class="icon-btn" id="micBtn" onclick="startMic('${targetId}')">🎙️ 音声で答える</button>`;
+}
+function startMic(id){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return;
+  try{
+    const rec = new SR();
+    rec.lang='en-US'; rec.interimResults=false;
+    const btn = document.getElementById('micBtn');
+    if(btn) btn.classList.add('on');
+    rec.onresult = (e)=>{ const t=e.results[0][0].transcript; const el=document.getElementById(id); if(el) el.value=(el.value?el.value+' ':'')+t; };
+    rec.onend = ()=>{ if(btn) btn.classList.remove('on'); };
+    rec.onerror = ()=>{ if(btn) btn.classList.remove('on'); };
+    rec.start();
+  }catch(e){}
+}
+function meBubble(text){ return `<div class="examiner me"><div class="badge">🧑‍🎓</div><div class="bubble">${text}</div></div>`; }
+function sceneHtml(figures){
+  return figures.map(f=>`<div class="figure"><span class="num">${f.num}</span><div class="emoji">${f.emoji}</div><div class="prop">${f.prop}</div><div class="label">${f.label}</div></div>`).join('');
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function toPhase(p){ state.phase=p; render(); }
+function toggleModel(qKey){ const m=document.getElementById('model_'+qKey); if(m) m.classList.toggle('show'); }
+
+function screenEnter(){
+  panel.innerHTML = `
+    <p class="note">受付を済ませ、荷物をすべて持って面接室の前へ移動します。順番が来たらドアをノックして入室しましょう。</p>
+    <div class="row"><button class="primary" onclick="toPhase(1)">Hello. (入室してあいさつする) →</button></div>`;
+}
+function screenCardPass(){
+  panel.innerHTML = meBubble('Hello.') +
+    `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Can I have your card, please?</div></div>
+    <div class="row"><button class="primary" onclick="toPhase(2)">Here you are. (面接カードを渡す) →</button></div>`;
+  autoSpeak(["Can I have your card, please?"]);
+}
+function screenSit(){
+  panel.innerHTML = meBubble('Here you are.') +
+    `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Please sit down.</div></div>
+    <div class="row"><button class="primary" onclick="toPhase(3)">Thank you. (着席する) →</button></div>`;
+  autoSpeak(["Please sit down."]);
+}
+function submitGreetName(){
+  const v = document.getElementById('nameInput').value.trim();
+  state.name = v || 'there';
+  state.greet.step = 1; render();
+}
+function advanceGreet(step){ state.greet.step = step; render(); }
+function finishGreet(){
+  const v = document.getElementById('ansFeel').value.trim();
+  state.answers.push({q:"How are you today?", a: v || "(no answer)"});
+  state.phase = 4; render();
+}
+function screenGreet(){
+  const g = state.greet;
+  if(g.step === 0){
+    panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">What's your name, please?</div></div>
+      <input type="text" id="nameInput" placeholder="Your name (ローマ字で入力)">
+      <div class="row"><button class="primary" onclick="submitGreetName()">My name is ... →</button></div>`;
+    autoSpeak(["What's your name, please?"]);
+  } else if(g.step === 1){
+    panel.innerHTML = meBubble(`My name is ${escapeHtml(state.name)}.`) +
+      `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">This is the Grade 3 test, OK?</div></div>
+      <div class="row"><button class="primary" onclick="advanceGreet(2)">OK. →</button></div>`;
+    autoSpeak(["This is the Grade 3 test, OK?"]);
+  } else {
+    panel.innerHTML = meBubble('OK.') +
+      `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">How are you today?</div></div>
+      <textarea id="ansFeel" placeholder="I'm fine, thank you. And you?"></textarea>
+      <div class="row">${micInput('ansFeel')}</div>
+      <div class="row"><button class="primary" onclick="finishGreet()">問題カードを受け取る →</button></div>`;
+    autoSpeak(["How are you today?"]);
+  }
+}
+function receiveCard(){
+  state.cardIdx = Math.floor(Math.random()*CARDS.length);
+  state.phase = 5; render();
+}
+function screenReceive(){
+  panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Let's start the test. This is your card.</div></div>
+    <div class="row"><button class="primary" onclick="receiveCard()">Thank you. (カードを受け取る) →</button></div>`;
+  autoSpeak(["Let's start the test.", "This is your card."]);
+}
+function startSilent(){
+  const box = document.getElementById('timerBox');
+  box.innerHTML = `<div class="timer" id="timerNum">20</div><p class="hint">黙読タイマー(20秒)— 声に出さずに読みましょう</p>`;
+  let t = 20;
+  const numEl = document.getElementById('timerNum');
+  const iv = setInterval(()=>{ t--; if(numEl) numEl.textContent=t; if(t<=0){ clearInterval(iv); state.phase=6; render(); } },1000);
+  window._eikenTimer = iv;
+}
+function screenSilent(){
+  const c = CARDS[state.cardIdx];
+  panel.innerHTML = `
+    <div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Please read the passage silently for 20 seconds.</div></div>
+    <h2 class="card-title">${c.title}</h2>
+    <div class="passage">${c.passage}</div>
+    <div class="scene">${sceneHtml(c.figures)}</div>
+    <div id="timerBox"><div class="row"><button class="primary" onclick="startSilent()">All right. (黙読を始める) →</button></div></div>`;
+  autoSpeak(["Please read the passage silently for 20 seconds."]);
+}
+function screenAloud(){
+  const c = CARDS[state.cardIdx];
+  panel.innerHTML = `
+    <div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Now, please read the passage aloud.</div></div>
+    <h2 class="card-title">${c.title}</h2>
+    <div class="passage">${c.passage}</div>
+    <div class="row">${ttsBtn(c.passage)}</div>
+    <div class="row"><button class="primary" onclick="toPhase(7)">OK. 音読が終わった → Q1へ</button></div>`;
+  autoSpeak(["Now, please read the passage aloud."]);
+}
+function saveAndGo(qKey, nextPhase){
+  const c = CARDS[state.cardIdx];
+  const el = document.getElementById('ans_'+qKey);
+  state.answers.push({q:c[qKey], a: (el.value.trim() || '(no answer)')});
+  state.phase = nextPhase; render();
+}
+function askScreen(qKey, aKey, prefix, showCard, nextLabel, nextPhase){
+  const c = CARDS[state.cardIdx];
+  const q = c[qKey], a = c[aKey];
+  const ansId = 'ans_'+qKey;
+  panel.innerHTML = `
+    ${prefix ? `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">${prefix}</div></div>` : ''}
+    <div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">${q} ${ttsBtn(q)}</div></div>
+    ${showCard ? `<h2 class="card-title">${c.title}</h2><div class="passage">${c.passage}</div><div class="scene">${sceneHtml(c.figures)}</div>` : ''}
+    <textarea id="${ansId}" placeholder="Type your answer here"></textarea>
+    <div class="row">${micInput(ansId)}<button class="icon-btn" onclick="toggleModel('${qKey}')">💡 模範解答</button></div>
+    <div class="model" id="model_${qKey}">${escapeHtml(a)}</div>
+    <div class="row"><button class="primary" onclick="saveAndGo('${qKey}',${nextPhase})">${nextLabel}</button></div>`;
+  autoSpeak([prefix, q]);
+}
+function screenFlip(){
+  panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">Please turn the card over.</div></div>
+    <div class="row"><button class="primary" onclick="toPhase(11)">(カードを裏返す) →</button></div>`;
+  autoSpeak(["Please turn the card over."]);
+}
+function q5Next(){
+  const v = document.getElementById('ansQ5a').value.trim();
+  state.q5firstAns = v || '(no answer)';
+  state.q5yes = /^\s*(yes|yeah|yep|sure)/i.test(v);
+  state.q5stage = 1; render();
+}
+function finishQ5(){
+  const c = CARDS[state.cardIdx];
+  const v = document.getElementById('ansQ5b').value.trim();
+  state.answers.push({q:c.q5.q, a: state.q5firstAns});
+  const followText = c.q5.type === 'which' ? c.q5.follow : (state.q5yes ? c.q5.yesFollow : c.q5.noFollow);
+  state.answers.push({q:followText, a: v || '(no answer)'});
+  state.phase = 13; render();
+}
+function screenQ5(){
+  const c = CARDS[state.cardIdx];
+  const q5 = c.q5;
+  if(state.q5stage === 0){
+    panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">${q5.q} ${ttsBtn(q5.q)}</div></div>
+      <textarea id="ansQ5a" placeholder="Yes, I do. / No, I don't. / I like ~ better. など"></textarea>
+      <div class="row">${micInput('ansQ5a')}</div>
+      <div class="row"><button class="primary" onclick="q5Next()">次へ →</button></div>`;
+    autoSpeak([q5.q]);
+  } else {
+    const follow = q5.type === 'which' ? q5.follow : (state.q5yes ? q5.yesFollow : q5.noFollow);
+    panel.innerHTML = meBubble(escapeHtml(state.q5firstAns)) +
+      `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">${follow} ${ttsBtn(follow)}</div></div>
+      <textarea id="ansQ5b" placeholder="Because ..."></textarea>
+      <div class="row">${micInput('ansQ5b')}<button class="icon-btn" onclick="toggleModel('q5')">💡 ヒント</button></div>
+      <div class="model" id="model_q5">${escapeHtml(c.q5hint||'')}</div>
+      <div class="row"><button class="primary" onclick="finishQ5()">面接を終える →</button></div>`;
+    autoSpeak([follow]);
+  }
+}
+function screenReturnCard(){
+  panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">This is the end of the test. May I have your card back, please?</div></div>
+    <div class="row"><button class="primary" onclick="toPhase(14)">Here you are. (カードを返す) →</button></div>`;
+  autoSpeak(["This is the end of the test.", "May I have your card back, please?"]);
+}
+function screenExit(){
+  panel.innerHTML = `<div class="examiner"><div class="badge">🧑‍💼</div><div class="bubble">You may go now.</div></div>
+    <div class="row"><button class="primary" onclick="toPhase(15)">Thank you. Goodbye. (退室する) →</button></div>`;
+  autoSpeak(["You may go now."]);
+}
+function screenEnd(){
+  panel.innerHTML = `
+    <h2 class="card-title">おつかれさまでした！</h2>
+    <div class="transcript">
+      ${state.answers.map((t,i)=>`<div class="turn"><div class="qlabel">Q${i+1}</div><div class="qtext">${escapeHtml(t.q)}</div><div class="atext">${escapeHtml(t.a)}</div></div>`).join('')}
+    </div>
+    <div class="row"><button class="primary" onclick="restart()">別のカードでもう一度</button></div>`;
+}
+function restart(){
+  state = { phase:0, cardIdx:0, name:'', answers:[], ttsOn:state.ttsOn, greet:{step:0}, q5stage:0, q5yes:false, q5firstAns:'' };
+  render();
+}
+function render(){
+  renderSteps();
+  if(window._eikenTimer) clearInterval(window._eikenTimer);
+  switch(state.phase){
+    case 0: screenEnter(); break;
+    case 1: screenCardPass(); break;
+    case 2: screenSit(); break;
+    case 3: screenGreet(); break;
+    case 4: screenReceive(); break;
+    case 5: screenSilent(); break;
+    case 6: screenAloud(); break;
+    case 7: askScreen('q1','a1','Please look at the passage.', true, 'Q2へ →', 8); break;
+    case 8: askScreen('q2','a2','Please look at the picture.', true, 'Q3へ →', 9); break;
+    case 9: askScreen('q3','a3', null, true, 'カードを裏返す →', 10); break;
+    case 10: screenFlip(); break;
+    case 11: askScreen('q4','a4', null, false, 'Q5へ →', 12); break;
+    case 12: screenQ5(); break;
+    case 13: screenReturnCard(); break;
+    case 14: screenExit(); break;
+    case 15: screenEnd(); break;
+  }
+}
+render();
+</script>
+</body>
+</html>
