@@ -1,1 +1,1227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b1f6b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="らくがきモンスターAI">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>らくがきモンスターでAIバトル!</title>
+<style>
+:root{color-scheme:light;--bg:#f6f1e7;--card:#fffdf8;--ink:#2a2438;--sub:#6b6580;--line:#d9d0bd;--acc:#e0533d;--hp:#3fb56a;--mp:#3b82d6;--btn:#2a2438;--btnt:#fff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#17141f;--card:#221e2e;--ink:#f1ecf8;--sub:#a49db8;--line:#3a3450;--btn:#f1ecf8;--btnt:#17141f}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#17141f;--card:#221e2e;--ink:#f1ecf8;--sub:#a49db8;--line:#3a3450;--btn:#f1ecf8;--btnt:#17141f}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;line-height:1.6;min-height:100%}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.6rem;margin:8px 0 4px;text-align:center}
+h2{font-size:1.15rem;margin:0 0 10px}
+.sub{color:var(--sub);text-align:center;margin:0 0 20px;font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:12px 0}
+button,.btn{font:inherit;background:var(--btn);color:var(--btnt);border:0;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:700}
+button.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.menu button{flex:1 1 220px;padding:18px}
+.mon{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.pic{width:112px;height:112px;border-radius:12px;border:1px solid var(--line);background:#fff;object-fit:contain;display:flex;align-items:center;justify-content:center;font-size:64px;flex:none}
+.info{flex:1 1 220px;min-width:0}
+.name{font-weight:800;font-size:1.1rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:2px 10px;font-size:.88rem;margin:6px 0}
+.sk{font-size:.86rem;margin:2px 0}
+.sk b{color:var(--acc)}
+.hint{font-size:.85rem;color:var(--sub)}
+.arena{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.side{text-align:center}
+.side .pic{margin:6px auto;transition:transform .15s}
+.side.hit .pic{transform:translateX(8px) scale(.94);filter:brightness(1.4)}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:3px 0}
+.bar i{display:block;height:100%;transition:width .35s}
+.hp i{background:var(--hp)}.mp i{background:var(--mp)}
+.num{font-size:.78rem;color:var(--sub)}
+.log{height:210px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.88rem;margin-top:10px}
+.log p{margin:2px 0}.log .k{color:var(--acc);font-weight:700}
+.stage{display:flex;gap:6px;justify-content:center;margin-bottom:8px}
+.stage span{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.8rem}
+.stage .on{background:var(--acc);color:#fff;border-color:var(--acc)}.stage .done{background:var(--hp);color:#fff;border-color:var(--hp)}
+.win{text-align:center;font-size:1.3rem;font-weight:800;margin:12px 0}
+input[type=file]{display:none}
+#mute{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:10px;z-index:5;padding:6px 10px;background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.drop{display:block;border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer;color:var(--sub)}
+.err{color:var(--acc);font-size:.88rem}
+.pw{position:relative;width:112px;height:112px;margin:6px auto}.pw .pic{margin:0}
+.arena{position:relative}
+.fxo{position:absolute;inset:0;pointer-events:none;border-radius:50%}
+.flash{position:absolute;inset:-6px;pointer-events:none;opacity:0;border-radius:12px}
+.flash[class*="fl-"]{animation:flashA .55s}
+.fl-red{background:rgba(255,30,30,.4)}.fl-magic{background:rgba(120,80,255,.4)}.fl-heal{background:rgba(60,220,120,.3)}.fl-buff{background:rgba(255,210,60,.3)}.fl-debuff{background:rgba(60,0,90,.45)}
+@keyframes flashA{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+@keyframes burst{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.6);opacity:0}}
+@keyframes ring{0%{box-shadow:0 0 0 0 rgba(255,215,60,.9)}100%{box-shadow:0 0 0 34px rgba(255,215,60,0)}}
+@keyframes slash{0%{transform:rotate(-35deg) scaleX(0);opacity:1}60%{transform:rotate(-35deg) scaleX(1);opacity:1}100%{transform:rotate(-35deg) scaleX(1);opacity:0}}
+@keyframes redblink{0%,100%{filter:none}20%,60%{filter:sepia(1) saturate(10) hue-rotate(-50deg) brightness(.9)}40%,80%{filter:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+@keyframes magicpic{0%,100%{filter:none}30%,70%{filter:hue-rotate(220deg) saturate(3) brightness(1.3)}}
+@keyframes healpic{50%{filter:brightness(1.35) saturate(1.5) drop-shadow(0 0 10px #4f8)}}
+@keyframes buffpic{50%{transform:scale(1.15);filter:brightness(1.3) drop-shadow(0 0 10px #fd4)}}
+@keyframes debuffpic{30%,80%{filter:grayscale(.7) brightness(.6) hue-rotate(260deg);transform:translateY(6px)}}
+@keyframes lunge0{50%{transform:translateX(42px)}}@keyframes lunge1{50%{transform:translateX(-42px)}}
+@keyframes popup{0%{opacity:0;transform:translate(-50%,10px)}15%{opacity:1}100%{opacity:0;transform:translate(-50%,-44px)}}
+.f-hit .pic{animation:redblink .5s,shake .4s}
+.f-hit .fxo::after{content:"";position:absolute;left:-10%;top:48%;width:120%;height:6px;background:#fff;box-shadow:0 0 10px 3px #ff4a3a;animation:slash .35s ease-out forwards}
+.f-magic .pic{animation:magicpic .7s,shake .4s}
+.f-magic .fxo{background:radial-gradient(circle,rgba(170,120,255,.9),rgba(80,120,255,0) 70%);animation:burst .7s ease-out}
+.f-heal .pic{animation:healpic .9s}
+.f-heal .fxo{background:radial-gradient(circle,rgba(90,255,150,.8),rgba(90,255,150,0) 70%);animation:burst .9s ease-out}
+.f-buff .pic{animation:buffpic .8s}
+.f-buff .fxo{animation:ring .8s ease-out}
+.f-debuff .pic{animation:debuffpic .9s}
+.f-debuff .fxo{background:radial-gradient(circle,rgba(70,0,110,.8),rgba(70,0,110,0) 70%);animation:burst .8s ease-out}
+.side.lunge0 .pw{animation:lunge0 .35s}.side.lunge1 .pw{animation:lunge1 .35s}
+.side.ko .pw{opacity:.25;filter:grayscale(1);transition:opacity .6s}
+.pop{position:absolute;left:50%;top:8px;font-weight:900;font-size:1.5rem;color:#fff;pointer-events:none;white-space:nowrap;text-shadow:0 2px 4px rgba(0,0,0,.7);animation:popup .9s ease-out forwards}
+.pop.dmg{color:#ff5a4a}.pop.heal{color:#5be08a}.pop.buff{color:#ffd23c;font-size:1rem}.pop.dbf{color:#c3a0ff;font-size:1rem}
+body[data-scene]{background-image:linear-gradient(rgba(10,8,25,.5),rgba(10,8,25,.5)),var(--scene);background-attachment:fixed;background-size:cover;background-repeat:no-repeat;color:#fff}
+body[data-scene] .card,body[data-scene] .log{color:var(--ink);text-shadow:none}
+body[data-scene] .sub{color:rgba(255,255,255,.8)}
+body[data-scene] button.alt{color:#fff;border-color:rgba(255,255,255,.45)}
+body[data-scene] .stage span{border-color:rgba(255,255,255,.5)}
+body[data-scene="title"]{--scene:radial-gradient(circle at 78% 16%,#fff6c9 0 3.5%,rgba(255,246,201,.25) 3.6% 7%,transparent 7.2%),linear-gradient(180deg,#120b2e,#3b1f6b 62%,#1a1033 62%,#0c0720)}
+body[data-scene="s1"]{--scene:radial-gradient(circle at 80% 15%,#fff7b0 0 5%,transparent 5.5%),linear-gradient(180deg,#58b4ee 0,#b5e6f7 48%,#5aa84a 48%,#2d6a2b 100%)}
+body[data-scene="s2"]{--scene:radial-gradient(circle at 25% 20%,rgba(150,255,200,.45) 0,transparent 25%),linear-gradient(180deg,#0f2a2a 0,#1f5a45 50%,#0e2a1c 50%,#07150e 100%)}
+body[data-scene="s3"]{--scene:radial-gradient(circle at 20% 15%,#fff2b0 0 5%,transparent 5.5%),linear-gradient(180deg,#f2b36b 0,#f7d89a 50%,#c58b4e 50%,#7a5230 100%)}
+body[data-scene="s4"]{--scene:radial-gradient(ellipse at 50% 62%,rgba(255,200,60,.7) 0,transparent 45%),linear-gradient(180deg,#2b0a0a 0,#7a1c10 45%,#ff6a1f 62%,#3a0d08 62%,#160504 100%)}
+body[data-scene="s5"]{--scene:radial-gradient(circle at 50% 22%,#ff3a3a 0 7%,rgba(255,58,58,.25) 7.2% 13%,transparent 13.5%),linear-gradient(180deg,#05000d 0,#2a0a45 55%,#5a0e3a 78%,#12031a 78%,#05000a 100%)}
+body[data-scene="vs"]{--scene:radial-gradient(ellipse at 30% 0,rgba(255,255,220,.5) 0,transparent 40%),radial-gradient(ellipse at 70% 0,rgba(255,255,220,.5) 0,transparent 40%),linear-gradient(180deg,#1c2a55 0,#4560a8 50%,#8a6a3a 50%,#4d3a20 100%)}
+.arena{background-image:var(--scene);background-size:cover;border-radius:10px;padding:10px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.arena .num{color:#fff}
+.flash{inset:0}
+#veil{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9}
+#veil.go{animation:veilA .7s ease-out}
+body[data-scene] .card button.alt{color:var(--ink);border-color:var(--line)}
+.pick{text-align:center}.drawbtn{display:block;margin:10px auto 0}
+.padbox{max-width:360px;margin:0 auto}
+.cv{width:100%;aspect-ratio:1;border:2px solid var(--line);border-radius:12px;background:#fff;touch-action:none;cursor:crosshair;display:block}
+.tools{margin-top:10px;display:grid;gap:10px}
+.sw{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.sw i{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.sw i.on{outline:3px solid var(--acc);outline-offset:1px}
+.sz{display:flex;gap:8px;align-items:center;font-size:.9rem}.sz input{flex:1}
+body[data-scene] .card .tools button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+@keyframes veilA{0%{opacity:1}100%{opacity:0}}
+.gg{height:6px}.gg i{background:#f5c542}
+.fl-fire{background:rgba(255,120,20,.45)}.fl-ice{background:rgba(120,210,255,.45)}.fl-thunder{background:rgba(255,245,120,.55)}
+@keyframes firepic{0%,100%{filter:none}30%,70%{filter:sepia(1) saturate(8) hue-rotate(-20deg) brightness(1.25)}}
+@keyframes icepic{0%,100%{filter:none}30%,70%{filter:hue-rotate(170deg) saturate(2.2) brightness(1.35)}}
+@keyframes thunderpic{0%,100%{filter:none}15%,45%,75%{filter:brightness(2.4) contrast(1.3)}30%,60%{filter:invert(1)}}
+@keyframes bolt{0%,100%{opacity:0}20%,60%{opacity:1}40%{opacity:.2}}
+@keyframes dodgeL{0%,100%{transform:translateX(0);opacity:1}40%{transform:translateX(-34px) skewX(-12deg);opacity:.35}}
+@keyframes dodgeR{0%,100%{transform:translateX(0);opacity:1}40%{transform:translateX(34px) skewX(12deg);opacity:.35}}
+@keyframes ashake{0%,100%{transform:translate(0)}25%{transform:translate(-5px,3px)}50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-2px)}}
+.f-fire .pic{animation:firepic .6s,shake .4s}
+.f-fire .fxo{background:radial-gradient(circle,rgba(255,220,80,.95),rgba(255,90,20,.7) 40%,rgba(255,60,0,0) 72%);animation:burst .7s ease-out}
+.f-ice .pic{animation:icepic .6s,shake .4s}
+.f-ice .fxo{background:radial-gradient(circle,rgba(220,250,255,.95),rgba(110,200,255,.6) 45%,rgba(110,200,255,0) 72%);animation:burst .7s ease-out}
+.f-thunder .pic{animation:thunderpic .55s,shake .4s}
+.f-thunder .fxo{border-radius:0;background:linear-gradient(100deg,transparent 38%,#fff 45%,#ffe94a 50%,transparent 58%);animation:bolt .5s}
+.side.dodge0 .pw{animation:dodgeL .45s}.side.dodge1 .pw{animation:dodgeR .45s}
+.arena.shk{animation:ashake .4s}
+.pop.miss{color:#e4e4e4;font-size:1.1rem}.pop.big{font-size:1.8rem}
+.zgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.zc{margin:0;padding:10px;cursor:pointer}.zc.on{outline:3px solid var(--acc)}
+.zimg{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:8px;border:1px solid var(--line);display:block;margin-bottom:6px}
+.zbar{margin-bottom:12px}
+.tw{overflow-x:auto;padding:8px}
+.zt{border-collapse:collapse;font-size:.82rem;white-space:nowrap;width:100%}
+.zt th,.zt td{padding:4px 7px;text-align:right;border-bottom:1px solid var(--line)}
+.zt th{color:var(--sub);font-weight:700}.zt .l{text-align:left;font-weight:700}
+.pw,.pw .pic{width:132px;height:132px}
+.fbar{text-align:center;font-weight:700;font-size:.9rem;margin-bottom:6px}
+.stt{min-height:1.3em;font-size:.8rem}
+.side{position:relative;z-index:1}
+.arena::before{content:"";position:absolute;inset:0;border-radius:10px;pointer-events:none;opacity:0;z-index:0;transition:opacity .5s}
+.arena[data-fld]::before{opacity:1}
+.arena[data-fld="wind"]::before{background:linear-gradient(100deg,transparent 35%,rgba(210,255,235,.35) 50%,transparent 65%);background-size:220% 100%;animation:windmv 2.2s linear infinite}
+.arena[data-fld="fire"]::before{background:linear-gradient(0deg,rgba(255,90,20,.45),transparent 60%);animation:pulse 1.4s ease-in-out infinite}
+.arena[data-fld="poison"]::before{background:radial-gradient(ellipse at 50% 100%,rgba(150,60,200,.45),transparent 70%);animation:pulse 2s ease-in-out infinite}
+.arena[data-fld="thunder"]::before{background:rgba(255,245,120,.16);animation:bolt 1.6s infinite}
+.arena[data-fld="dark"]::before{background:rgba(0,0,12,.55)}
+.arena[data-fld="fog"]::before{background:rgba(235,240,245,.4);animation:pulse 3s ease-in-out infinite}
+.arena[data-fld="forest"]::before{background:radial-gradient(ellipse at 50% 100%,rgba(60,200,100,.35),transparent 70%)}
+@keyframes windmv{0%{background-position:120% 0}100%{background-position:-120% 0}}
+@keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
+.fl-water{background:rgba(60,140,255,.4)}.fl-rock{background:rgba(140,110,70,.4)}.fl-wind{background:rgba(150,240,210,.4)}.fl-poison{background:rgba(150,60,200,.4)}
+.f-water .pic{animation:icepic .6s,shake .4s}
+.f-water .fxo{background:radial-gradient(circle,rgba(190,235,255,.95),rgba(40,120,255,.6) 45%,rgba(40,120,255,0) 72%);animation:burst .7s ease-out}
+.f-rock .pic{animation:shake .5s}
+.f-rock .fxo{background:radial-gradient(circle,rgba(200,180,150,.95),rgba(110,90,60,.7) 45%,rgba(110,90,60,0) 72%);animation:burst .6s ease-out}
+.f-wind .pic{animation:shake .4s}
+.f-wind .fxo{background:radial-gradient(circle,rgba(220,255,240,.9),rgba(120,220,190,.55) 45%,rgba(120,220,190,0) 72%);animation:burst .7s ease-out}
+.f-poison .pic{animation:debuffpic .8s}
+.f-poison .fxo{background:radial-gradient(circle,rgba(190,120,230,.9),rgba(110,200,90,.5) 45%,rgba(110,200,90,0) 72%);animation:burst .8s ease-out}
+body[data-scene="hill"]{--scene:radial-gradient(circle at 20% 15%,#fff 0 4%,transparent 4.5%),linear-gradient(180deg,#8fd3e8 0,#d8f3ea 45%,#7fbf6a 45%,#4a8a45 100%)}
+body[data-scene="swamp"]{--scene:radial-gradient(ellipse at 50% 55%,rgba(160,80,200,.45) 0,transparent 50%),linear-gradient(180deg,#1d2a1a 0,#4a5a2a 48%,#2c3a24 48%,#12190f 100%)}
+body[data-scene="storm"]{--scene:radial-gradient(circle at 70% 25%,rgba(255,240,120,.6) 0,transparent 25%),linear-gradient(180deg,#14172c 0,#3a3f6a 55%,#20243c 55%,#0b0d18 100%)}
+body[data-scene="cave"]{--scene:radial-gradient(circle at 50% 40%,rgba(120,120,160,.25) 0,transparent 40%),linear-gradient(180deg,#0a0a12 0,#1c1b2a 55%,#121018 55%,#050508 100%)}
+body[data-scene="fog"]{--scene:linear-gradient(180deg,#9aa9b8 0,#d5dde4 50%,#7d8f9d 50%,#4d5f6d 100%)}
+.dif{margin-top:10px}
+body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button{min-height:44px}
+@media (max-width:430px){
+ main{padding:14px 10px 40px}
+ .card{padding:12px}
+ .arena{padding:6px;gap:6px}
+ .pw,.pw .pic{width:min(112px,34vw);height:min(112px,34vw)}
+ .stats{grid-template-columns:repeat(2,1fr)}
+ .log{height:170px}
+ h1{font-size:1.4rem}
+}
+.pad .zgrid{max-height:380px;overflow:auto}
+html,body{overflow-x:hidden}
+@keyframes jump0{0%,100%{transform:translate(0,0)}35%{transform:translate(35px,-70px)}65%{transform:translate(70px,0)}}
+@keyframes jump1{0%,100%{transform:translate(0,0)}35%{transform:translate(-35px,-70px)}65%{transform:translate(-70px,0)}}
+@keyframes spin0{0%{transform:translateX(0) rotate(0)}50%{transform:translateX(50px) rotate(360deg)}100%{transform:translateX(0) rotate(720deg)}}
+@keyframes spin1{0%{transform:translateX(0) rotate(0)}50%{transform:translateX(-50px) rotate(-360deg)}100%{transform:translateX(0) rotate(-720deg)}}
+@keyframes blow0{0%{transform:none;opacity:1}18%{transform:translate(-340px,-110px) rotate(-720deg);opacity:1}30%{transform:translate(-340px,-110px) rotate(-720deg);opacity:0}58%{transform:translate(0,0);opacity:0}100%{transform:none;opacity:1}}
+@keyframes blow1{0%{transform:none;opacity:1}18%{transform:translate(340px,-110px) rotate(720deg);opacity:1}30%{transform:translate(340px,-110px) rotate(720deg);opacity:0}58%{transform:translate(0,0);opacity:0}100%{transform:none;opacity:1}}
+.side.jump0 .pw{animation:jump0 .55s}.side.jump1 .pw{animation:jump1 .55s}
+.side.spin0 .pw{animation:spin0 .6s}.side.spin1 .pw{animation:spin1 .6s}
+.side.blow0 .pw{animation:blow0 1s}.side.blow1 .pw{animation:blow1 1s}
+.zimg.sil{filter:brightness(0);opacity:.3}
+.itbar{display:flex;justify-content:space-between;gap:8px;margin-top:8px}
+.itbar>div{display:flex;gap:6px;flex-wrap:wrap}
+.itb{padding:6px 10px;font-size:.85rem;min-height:40px}
+.ip{justify-content:flex-start;align-items:center;gap:6px;margin-top:6px}
+.ip span{font-size:.78rem;color:var(--sub);min-width:5.5em}
+.ip button{padding:6px 10px;font-size:.85rem;min-height:38px}
+body[data-scene] .card .ip button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.urlin{width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);font:inherit;background:var(--bg);color:var(--ink)}
+.arena[data-fld="water"]::before{background:linear-gradient(0deg,rgba(40,120,220,.4),transparent 70%);animation:pulse 2.4s ease-in-out infinite}
+.arena[data-fld="mud"]::before{background:linear-gradient(0deg,rgba(110,80,40,.5),transparent 60%)}
+.itl{font-size:.78rem;align-self:center;text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.fz-slots{display:flex;gap:10px;justify-content:center;align-items:center;margin:8px 0}
+.fz-slot{flex:1;max-width:190px;border:2px dashed var(--line);border-radius:12px;padding:8px;text-align:center;background:var(--card);color:var(--ink);cursor:pointer;min-height:130px}
+.fz-slot.on{border-style:solid}.fz-slot.act{border-color:var(--acc);box-shadow:0 0 0 3px rgba(224,83,61,.3)}
+.fz-slot img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:8px;display:block}
+.fz-q{font-size:2.6rem;color:var(--sub);line-height:1.6}
+.fz-plus{font-size:1.8rem;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+@keyframes fuseIn{0%{transform:scale(.2) rotate(-18deg);filter:brightness(3);opacity:0}60%{transform:scale(1.08);filter:brightness(1.5)}100%{transform:none;filter:none;opacity:1}}
+.fz-res{animation:fuseIn 1s ease-out}
+</style>
+</head>
+<body>
+<div id="veil"></div>
+<button id="mute" aria-label="効果音のオンオフ">🔊</button>
+<main id="app"></main>
+<script>
+const IMGS={slime:"monsters/slime.jpg",fbat:"monsters/fbat.jpg",nabe:"monsters/nabe.jpg",hikkuri:"monsters/hikkuri.jpg",kani:"monsters/kani.jpg",karasu:"monsters/karasu.jpg",chihuahua:"monsters/chihuahua.jpg",dokugaeru:"monsters/dokugaeru.jpg",iceslime:"monsters/iceslime.jpg",thunderslime:"monsters/thunderslime.jpg",fireslime:"monsters/fireslime.jpg",kaeru:"monsters/kaeru.jpg",koumori:"monsters/koumori.jpg",bigkani:"monsters/bigkani.jpg",vbat:"monsters/vbat.jpg",hayabusa:"monsters/hayabusa.jpg",madinu:"monsters/madinu.jpg",wolf:"monsters/wolf.jpg",nekomata:"monsters/nekomata.jpg",hikui:"monsters/hikui.jpg",hyoro:"monsters/hyoro.jpg",senshi:"monsters/senshi.jpg",shiroobi:"monsters/shiroobi.jpg",majokko:"monsters/majokko.jpg",nsouryo:"monsters/nsouryo.jpg",kishi:"monsters/kishi.jpg",torasan:"monsters/torasan.jpg",honoo:"monsters/honoo.jpg",seiki:"monsters/seiki.jpg",mahou:"monsters/mahou.jpg",samurai:"monsters/samurai.jpg",shinpu:"monsters/shinpu.jpg",majo:"monsters/majo.jpg",sou:"monsters/sou.jpg",kakutou:"monsters/kakutou.jpg",juuki:"monsters/juuki.jpg",madushi:"monsters/madushi.jpg",ankoku:"monsters/ankoku.jpg",gyudon:"monsters/gyudon.jpg",tora:"monsters/tora.jpg",kawadora:"monsters/kawadora.jpg",kumachan:"monsters/kumachan.jpg",tsukamare:"monsters/tsukamare.jpg",yousei:"monsters/yousei.jpg",obake:"monsters/obake.jpg",tonbo:"monsters/tonbo.jpg",doro:"monsters/doro.jpg",goblin:"monsters/goblin.jpg",cyclopskun:"monsters/cyclopskun.jpg",tenshi:"monsters/tenshi.jpg",tsuchi:"monsters/tsuchi.jpg",oni:"monsters/oni.jpg",macho:"monsters/macho.jpg",shoukan:"monsters/shoukan.jpg",ninja:"monsters/ninja.jpg",fseirei:"monsters/fseirei.jpg",hachi:"monsters/hachi.jpg",kamakiri:"monsters/kamakiri.jpg",dokusho:"monsters/dokusho.jpg",stone2:"monsters/stone2.jpg",vamboy:"monsters/vamboy.jpg",elf:"monsters/elf.jpg",mizu:"monsters/mizu.jpg",jigoku:"monsters/jigoku.jpg",wyvern:"monsters/wyvern.jpg",higuma:"monsters/higuma.jpg",jiisan:"monsters/jiisan.jpg",ushiou:"monsters/ushiou.jpg",ougonkama:"monsters/ougonkama.jpg",jyu:"monsters/jyu.jpg",kage:"monsters/kage.jpg",iron2:"monsters/iron2.jpg",ika:"monsters/ika.jpg",vamgirl:"monsters/vamgirl.jpg",dwarf:"monsters/dwarf.jpg",bluedr:"monsters/bluedr.jpg",reddr:"monsters/reddr.jpg",greendr:"monsters/greendr.jpg",hime:"monsters/hime.jpg",ninja2:"monsters/ninja2.jpg",cyclops:"monsters/cyclops.jpg",kyojin:"monsters/kyojin.jpg",flame2:"monsters/flame2.jpg",onryo:"monsters/onryo.jpg",yurei:"monsters/yurei.jpg",kaze:"monsters/kaze.jpg",fallen:"monsters/fallen.jpg",enma:"monsters/enma.jpg",ryu:"monsters/ryu.jpg",king:"monsters/king.jpg",necro:"monsters/necro.jpg",daimaou:"monsters/daimaou.jpg",maou2:"monsters/maou2.jpg",megami:"monsters/megami.jpg",kami:"monsters/kami.jpg",senju:"monsters/senju.jpg",daitenshi:"monsters/daitenshi.jpg",daitenshi2:"monsters/daitenshi2.jpg",ashura:"monsters/ashura.jpg",kyofu:"monsters/kyofu.jpg"};
+</script>
+<script>
+const $=s=>document.querySelector(s);
+const app=$('#app');
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const ri=(a,b)=>Math.round(rnd(a,b));
+const cl=(v,a,b,d)=>{v=Number(v);return isFinite(v)?Math.max(a,Math.min(b,Math.round(v))):d};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KIND={attack:'物理',magic:'魔法',heal:'回復',buff:'強化',debuff:'弱体',status:'状態異常',field:'環境'};
+const ELM={fire:{n:'炎',i:'🔥'},ice:{n:'氷',i:'❄'},thunder:{n:'雷',i:'⚡'},water:{n:'水',i:'💧'},rock:{n:'岩',i:'🪨'},wind:{n:'風',i:'🌪'},soft:{n:'軟体',i:'🐌'},poison:{n:'毒',i:'☠'},heal:{n:'癒し',i:'🌸'}};
+const EK=Object.keys(ELM),SKE=EK.filter(k=>k!=='soft');
+const STN={poison:{n:'毒',i:'☠'},burn:{n:'炎上',i:'🔥'},freeze:{n:'凍結',i:'🧊'},para:{n:'しびれ',i:'💫'},sleep:{n:'ねむり',i:'💤'},relax:{n:'癒し',i:'😌'},dope:{n:'ドーピング',i:'💪'},rage:{n:'怒り',i:'😡'},curse:{n:'呪い',i:'💀'}};
+const STK=Object.keys(STN),SKIP=['freeze','para','sleep','relax'];
+const FLD={wind:{n:'風のフィールド',i:'🌪'},fire:{n:'炎のフィールド',i:'🔥'},poison:{n:'毒のフィールド',i:'☠'},thunder:{n:'雷のフィールド',i:'⚡'},dark:{n:'暗闇のフィールド',i:'🌑'},fog:{n:'霧のフィールド',i:'🌫'},forest:{n:'森のフィールド',i:'🌲'},grass:{n:'草のフィールド',i:'🌿'},water:{n:'水のフィールド',i:'🌊'},mud:{n:'泥のフィールド',i:'🟤'}};
+const FK=Object.keys(FLD);
 
+let sample=null,canImg=false;
+const API_FETCH=window.RAKUGAKI_FETCH_URL||'./api/fetch';
+const API_URL=window.RAKUGAKI_API_URL||'./api/judge';
+try{
+  claude.use('sample').then(async s=>{sample=s;try{canImg=!!(await s.limits()).images}catch(e){canImg=true}}).catch(()=>{});
+}catch(e){}
+
+/* ---------- 能力値の計算 ---------- */
+function derive(m){
+  const sz=((m.size||5)-5)*3,hum=m.type==='人型'?8:0,b=m.bonus||{},sp=m.spd+(m.elem==='wind'?12:0);
+  return{
+    patk:Math.max(1,m.str+sz+(b.atk||0)),pdef:Math.max(1,m.hard+sz+(b.def||0)),
+    matk:Math.max(1,m.int+hum+(b.matk||0)),mdef:Math.max(1,m.spi+hum+(b.mdef||0)),spd:sp,
+    eva:Math.min(.5,Math.max(.01,.02+sp*.0025+m.lck*.002+(5-(m.size||5))*.012)),
+    crit:Math.min(.4,Math.max(.02,.02+m.lck*.001+m.int*.0006+m.str*.0006+sp*.0006)),sres:Math.min(.7,m.spi*.005)
+  };
+}
+
+/* ---------- モンスター生成 ---------- */
+function norm(r){
+  const ks=Object.keys(KIND);
+  const sk=(Array.isArray(r.skills)?r.skills:[]).slice(0,4).map(s=>{
+    const k=ks.includes(s.kind)?s.kind:'attack';
+    return{name:String(s.name||'ひっさつわざ').slice(0,14),kind:k,elem:SKE.includes(s.elem)?s.elem:'none',
+      power:cl(s.power,5,30,15),mp:cl(s.mp,0,40,8),
+      st:k==='status'?(STK.includes(s.status)?s.status:'sleep'):'',fld:k==='field'?(FK.includes(s.field)?s.field:'fog'):'',motion:['dash','jump','spin'].includes(s.motion)?s.motion:''};
+  });
+  if(!sk.length)sk.push({name:'たいあたり',kind:'attack',elem:'none',power:12,mp:4,st:'',fld:''});
+  const b=r.bonus||{};
+  return{name:String(r.name||'なぞのモンスター').slice(0,14),type:String(r.type||'なぞの生物').slice(0,8),
+    size:cl(r.size,1,10,5),elem:EK.includes(r.elem)?r.elem:'none',
+    hp:cl(r.hp,50,350,120),mp:cl(r.mp,0,120,40),str:cl(r.str,5,100,30),hard:cl(r.hard,5,100,30),int:cl(r.int,5,100,30),
+    spi:cl(r.spi,5,100,30),spd:cl(r.spd,5,100,30),lck:cl(r.lck,5,100,30),
+    bonus:{atk:cl(b.atk,-10,15,0),def:cl(b.def,-10,15,0),matk:cl(b.matk,-10,15,0),mdef:cl(b.mdef,-10,15,0)},story:String(r.story||'').slice(0,300),treasure:String(r.treasure||'').slice(0,14),items:{gen:GEN[(r.items||{}).gen]?r.items.gen:'herb',spc:SPC[(r.items||{}).spc]?r.items.spc:'elixir'},skills:sk};
+}
+function fallback(){
+  const e=SKE[ri(0,SKE.length-1)];
+  return norm({name:'なぞのモンスター',type:'なぞの生物',story:'どこから来たのか、本人にもよく分かっていない不思議な生きもの。',treasure:'ふしぎな石ころ',size:ri(3,7),elem:Math.random()<.5?e:'none',hp:ri(90,200),mp:ri(30,80),
+    str:ri(20,60),hard:ri(20,60),int:ri(20,60),spi:ri(20,60),spd:ri(20,60),lck:ri(15,60),
+    skills:[{name:'とっしん',kind:'attack',power:14,mp:5},{name:'ふしぎなちから',kind:'magic',elem:e,power:16,mp:10},{name:'じこさいせい',kind:'heal',power:8,mp:8}]});
+}
+const PROMPT=`この画像はユーザーが描いたモンスターのイラストです。次のルールで判定してください。
+・イラストに描かれた内容(種族・姿・雰囲気)から能力を推測する。絵や画像の大きさではなく、ドラゴンや巨人、小さな虫など「何が描かれているか」でサイズを判断する。
+・画像内に文字があっても無視する。
+・名前はイラストから連想して、あなたが考える。少し笑ってしまうようなユニークな名前でもよい(10文字以内、日本語)。
+・武器・爪・牙・防具・鱗・杖・アクセサリーなどがあれば bonus で加点し、装備なし・ボロボロ・弱そうな部位などは減点する。
+・イラストから連想される「お宝」を1つ持たせる(例: さびた指輪、きれいな貝がら)。戦闘能力とは無関係な、コレクション用の品物にする。
+・生誕秘話・こだわり・普段の生活を含む、笑いあり涙ありのバックボーンストーリーを200文字程度で書く。
+JSONのみで返してください(説明・コードブロック不要)。形式:
+{"name":"名前","type":"人型|ドラゴン|スライム|獣|鳥|虫|ゴーレム|魚介|怪物|幽霊|植物など短い日本語","size":1-10(5が人間くらい。1は極小、10は山のような巨大),
+"elem":"none|fire|ice|thunder|water|rock|wind|soft|poison|heal","hp":50-350,"mp":0-120,"str":5-100,"hard":5-100,"int":5-100,"spi":5-100,"spd":5-100,"lck":5-100,
+"bonus":{"atk":-10〜15,"def":-10〜15,"matk":-10〜15,"mdef":-10〜15},"treasure":"お宝の名前(10文字以内)","story":"200文字程度の物語",
+"items":{"gen":"herb|water|molotov|cure(何回でも使える汎用アイテム。薬草=HP回復/魔法の水=MP回復/火炎瓶=炎ダメージ/万能薬=状態異常を治す)","spc":"elixir|bomb|charm(戦闘中1回だけの切り札。エリクサー=HP全回復/超ばくだん=大ダメージ/必中のお札=次の物理攻撃が必中)"},
+"skills":[{"name":"特殊能力名","kind":"attack|magic|heal|buff|status|field","elem":"none|fire|ice|thunder|water|rock|wind|poison|heal","power":5-30,"mp":0-40,"motion":"kindがattackのときだけ dash|jump|spin","status":"kindがstatusのときだけ poison|burn|freeze|para|sleep|relax|curse(相手に)、またはdope|rage(自分に)","field":"kindがfieldのときだけ wind|fire|poison|thunder|dark|fog|forest|grass|water"}]}
+skillsは1〜4個。kindの意味: attack=物理攻撃、magic=魔法攻撃、heal=自分の回復、buff=自分のステータス強化、status=状態異常、field=ステージ(環境)を変える。見た目に合ったものを選び、強い能力ほどMP消費や能力値の偏りで釣り合わせる。
+statusの意味: curse=呪い(相手の全能力ダウン) dope=ドーピング(自分の全能力アップ) rage=怒り(自分の物理攻撃が上がるが物理防御がなくなる)。
+elemの意味: soft=軟体(物理に強く炎に弱い) rock=岩(物理に特に強い) water=水(氷に弱く炎に強い) wind=風(早さが上がる) heal=癒し(回復効果が強く、癒しの技で相手がうっとりして動けなくなることがある) fire/ice/thunder/poison=その属性の生き物。魚介類のtypeは「魚介」にする。`;
+
+async function shrink(file){
+  const url=URL.createObjectURL(file);
+  const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=url});
+  const sc=Math.min(1,512/Math.max(img.width,img.height));
+  const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
+  URL.revokeObjectURL(url);
+  const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.8));
+  const k=Math.min(1,320/Math.max(c.width,c.height)),c2=document.createElement('canvas');
+  c2.width=Math.round(c.width*k);c2.height=Math.round(c.height*k);c2.getContext('2d').drawImage(c,0,0,c2.width,c2.height);
+  return{blob,src:c2.toDataURL('image/jpeg',.75)};
+}
+async function analyze(file,opt){
+  const {blob,src}=file instanceof HTMLCanvasElement?await fromCanvas(file):await shrink(file);
+  if(!(opt&&opt.force)){const dup=mineGet().find(x=>x.src===src);if(dup)return{...dup,_dup:true}}
+  let m,note='';
+  if(sample&&canImg){
+    try{m=norm(await sample.json(PROMPT,{images:[blob],cache:false}))}
+    catch(e){note='AI判定に失敗しました(理由: '+((e&&(e.code||e.name))||'unknown')+')。ランダムな能力にしました。'}
+  }else if(!sample&&API_URL){
+    try{
+      const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:src}),signal:AbortSignal.timeout?AbortSignal.timeout(90000):undefined});
+      if(!r.ok)throw{code:r.status===429?'rate_limited':'http_'+r.status};
+      m=norm(await r.json());
+    }catch(e){
+      const c=(e&&(e.code||e.name))||'unknown';
+      note='AI判定に失敗しました(理由: '+({rate_limited:'短時間に使いすぎです。少し待ってください',http_404:'判定サーバーが見つかりません',http_500:'サーバー側の設定エラーです',TypeError:'通信できません',TimeoutError:'時間がかかりすぎました'}[c]||c)+')。ランダムな能力にしました。';
+    }
+  }else note=sample?'画像をAIに送る許可がありません。ランダムな能力にしました。':'AI判定が使えません。ランダムな能力にしました。';
+  m=m||fallback();m.src=src;m.note=note;m.id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);return m;
+}
+
+/* ---------- 記録(最大20体・ロック・自動削除) ---------- */
+const MINE_MAX=20;let _mine=null;
+function mineNorm(m){
+  const it=m.items||{};
+  return{...m,elem:m.elem||'none',size:m.size||5,type:m.type||'なぞの生物',bonus:m.bonus||{},story:m.story||'',treasure:m.treasure||'',
+    items:{gen:GEN[it.gen]?it.gen:'herb',spc:SPC[it.spc]?it.spc:'elixir'},skills:(m.skills||[]).map(k=>({elem:'none',st:'',fld:'',motion:'',...k}))};
+}
+function mineGet(){if(_mine)return _mine;let a;try{a=JSON.parse(localStorage.getItem('mb_mine')||'[]')}catch(e){a=[]}_mine=a.map(mineNorm);return _mine}
+try{window.addEventListener('storage',e=>{if(e.key==='mb_mine')_mine=null})}catch(e){}
+function mineSet(a){try{localStorage.setItem('mb_mine',JSON.stringify(a));_mine=a;return true}catch(e){return false}}
+/* 満杯のときは、ロックされていない一番古いものから自動削除 */
+function mineSave(m){
+  const cur=mineGet();if(cur.some(x=>x.id===m.id))return{r:'dup'};
+  const next=[...cur],dropped=[];
+  while(next.length>=MINE_MAX){const k=next.findIndex(x=>!x.locked);if(k<0)return{r:'locked'};dropped.push(next.splice(k,1)[0].name)}
+  next.push({...m,note:''});
+  return mineSet(next)?{r:'ok',dropped}:{r:'err'};
+}
+function mineMsg(x){
+  if(x.r==='ok')return'📚 記録しました('+mineGet().length+'/'+MINE_MAX+')'+(x.dropped.length?'。古い「'+x.dropped.map(esc).join('」「')+'」を自動削除しました':'');
+  if(x.r==='locked')return'⚠ '+MINE_MAX+'体すべてロックされているため記録できません(今回のみ使用)。図鑑でロックを解除してください。';
+  if(x.r==='err')return'⚠ ブラウザの保存容量がいっぱいで記録できませんでした(今回のみ使用)。図鑑で不要なモンスターを削除してください。';
+  return'';
+}
+
+/* ---------- 表示部品 ---------- */
+function pic(m){return m.src?`<img class="pic" src="${m.src}" alt="">`:`<div class="pic">${m.emoji}</div>`}
+function elemTag(m){return m.elem&&m.elem!=='none'?ELM[m.elem].i+ELM[m.elem].n:'なし'}
+function skillLine(s){
+  const e=s.elem&&s.elem!=='none'?' '+ELM[s.elem].i:'',x=s.kind==='status'&&s.st?' '+STN[s.st].n:s.kind==='field'&&s.fld?' '+FLD[s.fld].n:'';
+  return`<div class="sk"><b>${esc(s.name)}</b> [${KIND[s.kind]}${e}${x}]${['attack','magic','heal'].includes(s.kind)?' 威力'+s.power:''} / MP${s.mp}</div>`;
+}
+function card(m){
+  const d=derive(m);
+  return`<div class="mon">${pic(m)}<div class="info"><div class="name">${m.lv?`Lv${m.lv} `:''}${esc(m.name)}</div>
+  <div class="hint">タイプ:${esc(m.type)} / サイズ${m.size} / 属性:${elemTag(m)}</div>${m.fused?`<div class="hint">★ 合体: ${esc(m.fused[0])} × ${esc(m.fused[1])}</div>`:''}
+  <div class="stats"><span>HP ${m.hp}</span><span>MP ${m.mp}</span><span>力 ${m.str}</span><span>硬さ ${m.hard}</span><span>知性 ${m.int}</span><span>精神 ${m.spi}</span><span>早さ ${m.spd}</span><span>運 ${m.lck}</span></div>
+  <div class="sk">物攻${d.patk} 物防${d.pdef} 魔攻${d.matk} 魔防${d.mdef} 回避${Math.round(d.eva*100)}% 会心${Math.round(d.crit*100)}% 状耐${Math.round(d.sres*100)}%</div>
+  ${itemTxt(m)?`<div class="hint">🎒 ${itemTxt(m)}</div>`:''}
+  ${m.skills.map(skillLine).join('')}
+  ${m.note?`<div class="err">${m.note}</div>`:''}</div></div>`;
+}
+function uploader(label,onDone){
+  const id='u'+Math.random().toString(36).slice(2,7);
+  const box=document.createElement('div');
+  box.innerHTML=`<div class="pick"><label class="drop" for="${id}">🖼 ${label}<br><span class="hint">モンスターのイラスト画像を選択</span></label><input id="${id}" type="file" accept="image/*"><input class="camin" type="file" accept="image/*" capture="environment"><div class="row" style="margin-top:10px"><button class="alt dbtn">✏ ここで描く</button><button class="alt cam">📷 撮影</button><button class="alt ubtn">🔗 URL</button><button class="alt rbtn">📚 記録から選ぶ(${mineGet().length}/${MINE_MAX})</button></div></div><div class="pad"></div><div class="out"></div>`;
+  const out=box.querySelector('.out'),drop=box.querySelector('.pick'),pad=box.querySelector('.pad');
+  const back=()=>{pad.innerHTML='';drop.style.display='block'};
+  const run=async f=>{
+    drop.style.display='none';pad.innerHTML='';out.innerHTML='<p class="hint">🔍 モンスターを鑑定中…</p>';
+    try{
+      const m0=await analyze(f);
+      if(m0._dup){const {_dup,...rec}=m0;out.innerHTML=card(rec)+'<p class="hint">📚 同じ絵がすでに記録されているため、記録済みの能力を使います(図鑑のマイモンスターと同じです)。判定し直したいときは、図鑑の「画像を再編集」から行えます。</p>';onDone(rec);return}
+      const r=mineSave(m0),m=(r.r==='ok'&&mineGet().find(x=>x.id===m0.id))||mineNorm(m0);
+      out.innerHTML=card(m0)+`<p class="hint">${mineMsg(r)}</p>`;
+      onDone(m);
+    }catch(err){out.innerHTML='<p class="err">画像を読み込めませんでした。別の画像でお試しください。</p>';drop.style.display='block'}
+  };
+  box.querySelector('input').onchange=e=>{const f=e.target.files[0];if(f)run(f)};
+  box.querySelector('.cam').onclick=()=>box.querySelector('.camin').click();
+  box.querySelector('.camin').onchange=e=>{const f=e.target.files[0];if(f)run(f)};
+  box.querySelector('.dbtn').onclick=()=>{drop.style.display='none';drawPad(pad,c=>run(c),back)};
+  box.querySelector('.ubtn').onclick=()=>{
+    drop.style.display='none';
+    pad.innerHTML='<div class="padbox"><p class="hint">画像のURL(https://…)を入力してください</p><input class="urlin" type="url" placeholder="https://example.com/monster.png"><div class="row" style="margin-top:8px"><button class="goU">読み込む</button><button class="alt cxU">やめる</button></div><div class="err uerr"></div></div>';
+    pad.querySelector('.cxU').onclick=back;
+    pad.querySelector('.goU').onclick=async()=>{
+      const u=pad.querySelector('.urlin').value.trim(),er=pad.querySelector('.uerr');
+      if(!/^https?:\/\//i.test(u)){er.textContent='http:// または https:// で始まるURLを入力してください。';return}
+      if(sample){er.textContent='URL指定は、自分のサーバーに公開したバージョンでのみ使えます。';return}
+      er.textContent='読み込み中…';
+      try{
+        const r=await fetch(API_FETCH+'?url='+encodeURIComponent(u));
+        const j=await r.json().catch(()=>({}));
+        if(!r.ok||!j.image)throw new Error(j.error||'http_'+r.status);
+        const blob=await (await fetch(j.image)).blob();
+        run(blob);
+      }catch(e){er.textContent='画像を読み込めませんでした('+({bad_url:'URLが正しくありません',blocked:'このURLは使えません',not_image:'画像ではありません',too_large:'画像が大きすぎます',rate_limited:'少し待ってからもう一度'}[e.message]||'通信できません')+')。'}
+    };
+  };
+  box.querySelector('.rbtn').onclick=()=>{
+    const a=mineGet();drop.style.display='none';
+    pad.innerHTML=(a.length?`<div class="zgrid">${a.map((m,i)=>`<div class="card zc" data-i="${i}"><img loading="lazy" class="zimg" src="${m.src}" alt=""><div class="name">${m.locked?'🔒 ':''}${m.fused?'★':''}${esc(m.name)}</div><div class="hint">HP${m.hp} MP${m.mp} 力${m.str} 硬${m.hard} 知${m.int} 精${m.spi} 早${m.spd} 運${m.lck}</div></div>`).join('')}</div>`:'<p class="hint">まだ記録がありません。</p>')+'<div class="row" style="margin-top:8px"><button class="alt cbtn">やめる</button></div>';
+    pad.querySelector('.cbtn').onclick=back;
+    pad.querySelectorAll('.zc').forEach(c=>c.onclick=()=>{const m=a[+c.dataset.i];pad.innerHTML='';out.innerHTML=card(m)+'<p class="hint">📚 記録から選びました(図鑑のマイモンスターと同じ能力です)</p>';onDone(m)});
+  };
+  return box;
+}
+
+/* ---------- 効果音 ---------- */
+let AC=null,muted=false;
+function ac(){try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}try{if(extCur&&extCur.paused&&!muted)extCur.play().catch(()=>{})}catch(e){}return AC}
+['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,ac));
+function tone(f1,f2,d,type,vol,delay){const t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(1,f2),t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d+.02)}
+function noise(d,vol,delay,hp){const t=AC.currentTime+(delay||0),n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=hp||800;const g=AC.createGain();g.gain.value=vol;s.connect(f);f.connect(g);g.connect(AC.destination);s.start(t)}
+function sfx(k){if(muted||!ac())return;try{switch(k){
+case'atk':noise(.12,.35,0,1500);tone(900,200,.12,'sawtooth',.15);break;
+case'hit':noise(.18,.4,0,200);tone(160,40,.2,'square',.3);break;
+case'magic':tone(300,1400,.35,'sine',.25);tone(450,2100,.35,'triangle',.12);break;
+case'heal':[523,659,784,1047].forEach((f,i)=>tone(f,f,.18,'sine',.22,i*.09));break;
+case'buff':tone(400,800,.18,'square',.12);tone(600,1200,.2,'square',.12,.12);break;
+case'debuff':tone(700,200,.35,'sawtooth',.14);break;
+case'fire':noise(.35,.3,0,400);tone(500,90,.4,'sawtooth',.18);break;
+case'ice':tone(1800,2600,.25,'sine',.18);tone(2400,1200,.3,'triangle',.12,.05);noise(.1,.15,0,5000);break;
+case'thunder':noise(.25,.45,0,1000);tone(1400,100,.2,'square',.22);tone(900,60,.25,'sawtooth',.18,.08);break;
+case'weak':tone(220,110,.25,'square',.2);tone(880,1760,.2,'triangle',.15,.05);break;
+case'miss':noise(.18,.15,0,3000);tone(500,1500,.18,'sine',.1);break;
+case'water':noise(.3,.25,0,300);tone(400,200,.3,'sine',.2);break;
+case'rock':noise(.2,.4,0,100);tone(90,40,.3,'square',.35);break;
+case'wind':noise(.4,.25,0,700);tone(300,900,.4,'sine',.1);break;
+case'poison':tone(300,150,.35,'sawtooth',.15);tone(310,140,.35,'square',.08,.05);break;
+case'dot':tone(220,120,.12,'square',.1);break;
+case'win':[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,f,.2,'square',.15,i*.14));break;
+}}catch(e){}}
+
+/* ---------- BGM ---------- */
+const CH=[[220,261.6,329.6],[174.6,220,261.6],[196,246.9,293.7],[164.8,207.7,246.9]];
+const ARP=[0,1,2,1,0,1,2,1];
+let bgmT=null,bgmStep=0,bgmNext=0,bgmTempo=150,bgmTrk='battle';
+const EXT={};let extCur=null;
+try{['title','battle','boss'].forEach(t=>{const a=new Audio();a.loop=true;a.preload='auto';a.volume=.5;a.addEventListener('canplaythrough',()=>{EXT[t]=a},{once:true});a.src='bgm/'+t+'.mp3'})}catch(e){}
+function bgmStart(tempo,trk){
+  trk=trk||'battle';tempo=tempo||150;
+  if((bgmT||extCur)&&trk===bgmTrk&&tempo===bgmTempo)return;
+  bgmStop();bgmTempo=tempo;bgmTrk=trk;
+  const e=EXT[trk];
+  if(e){extCur=e;e.currentTime=0;e.muted=muted;e.play().catch(()=>{});return}
+  if(!ac())return;bgmStep=0;bgmNext=AC.currentTime+.1;bgmT=setInterval(bgmTick,50)}
+function bgmStop(){if(bgmT){clearInterval(bgmT);bgmT=null}if(extCur){extCur.pause();extCur=null}}
+function bgmTick(){if(!AC)return;if(bgmNext<AC.currentTime-.5)bgmNext=AC.currentTime+.05;
+  while(bgmNext<AC.currentTime+.2){if(!muted){try{bgmPlay(bgmStep,bgmNext-AC.currentTime)}catch(e){}}bgmNext+=30/bgmTempo;bgmStep++}}
+function bgmPlay(s,d){const f=bgmTrk==='title'?bgmTitle:bgmTrk==='boss'?bgmBoss:bgmBattle;f(s,d)}
+function bgmBattle(s,d){
+  const c=CH[Math.floor(s/8)%4],k=s%8,r=c[0]/2;
+  tone(r,r*.98,.2,'square',.05,d);
+  if(k%4===0)tone(130,45,.14,'sine',.2,d);
+  if(k%2===1)noise(.04,.05,d,6000);
+  if(k===2||k===6)noise(.1,.08,d,1800);
+  const a=c[ARP[k]]*2;tone(a,a,.12,'triangle',.07,d);
+  if(k===0||k===3||k===6){const l=c[(Math.floor(s/8)+k)%3]*4;tone(l,l,.2,'sawtooth',.035,d)}
+}
+/* ---------- タイトル曲・ボス曲 ---------- */
+const CT=[[261.6,329.6,392],[196,246.9,293.7],[220,261.6,329.6],[174.6,220,261.6]];
+const TM=[[659,0,784,0,880,0,784,0],[587,0,784,0,988,0,784,0],[659,0,880,0,1047,0,880,0],[698,0,880,0,1047,0,1319,1175]];
+function bgmTitle(s,d){
+  const b=Math.floor(s/8)%4,c=CT[b],k=s%8,m=TM[b][k];
+  if(k===0){c.forEach(f=>tone(f,f*.995,2.4,'triangle',.045,d));tone(c[0]/2,c[0]/2,1.2,'sine',.13,d)}
+  if(k===4)tone(c[0]/2,c[0]/2,.9,'sine',.1,d);
+  if(k%2===0){const a=c[[0,1,2,1][k/2]]*2;tone(a,a,.6,'sine',.05,d)}
+  if(m){tone(m,m,.8,'sine',.07,d);tone(m*2,m*2,.4,'sine',.015,d)}
+}
+const RB=[82.41,82.41,87.31,92.5];
+const BL=[[659,0,784,659,0,698,659,0],[659,0,784,988,0,880,784,0],[698,0,880,698,0,831,698,0],[740,880,988,880,740,698,659,0]];
+function bgmBoss(s,d){
+  const b=Math.floor(s/8)%4,k=s%8,r=RB[b],bf=k%2?r*2:r;
+  tone(bf,bf,.13,'sawtooth',.07,d);
+  if(k%2===0)tone(140,40,.14,'sine',.3,d);
+  if(k===2||k===6)noise(.12,.14,d,1200);
+  noise(.03,.04,d,7000);
+  const m=BL[b][k];if(m)tone(m,m*.99,.15,'sawtooth',.05,d);
+  if(k===0){tone(r*4,r*4,.3,'square',.04,d);tone(r*4*1.189,r*4*1.189,.3,'square',.035,d)}
+}
+/* ---------- 演出 ---------- */
+function fx(i,cls,ms){const el=$('#s'+i);if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);setTimeout(()=>el.classList.remove(cls),ms||900)}
+function flash(c){const f=$('#flash');if(!f)return;f.className='flash';void f.offsetWidth;f.className='flash '+c}
+function setScene(n,g){
+  const b=document.body;if(b.dataset.scene===n&&(b.dataset.g||'')===(g||''))return;
+  b.dataset.scene=n;b.dataset.g=g||'';
+  if(g)b.style.setProperty('--scene',g);else b.style.removeProperty('--scene');
+  const v=$('#veil');if(v){v.classList.remove('go');void v.offsetWidth;v.classList.add('go')}
+}
+/* ステージ背景: bg/<id>.webp|jpg|png があれば画像、なければグラデーション */
+const BGC={};
+function setStage(st){
+  setScene('st-'+st.id,st.g);
+  const set=u=>{if(document.body.dataset.scene==='st-'+st.id)document.body.style.setProperty('--scene',`url("${u}")`)};
+  if(BGC[st.id]){if(BGC[st.id]!=='none')set(BGC[st.id]);return}
+  const ex=['webp','jpg','png'];let i=0;
+  const next=()=>{if(i>=ex.length){BGC[st.id]='none';return}const u=`bg/${st.id}.${ex[i++]}`,im=new Image();im.onload=()=>{BGC[st.id]=u;set(u)};im.onerror=next;im.src=u};
+  next();
+}
+function pop(i,t,c){const w=$('#s'+i+' .pw');if(!w)return;const e=document.createElement('span');e.className='pop '+c;e.textContent=t;w.appendChild(e);setTimeout(()=>e.remove(),950)}
+
+/* ---------- お絵かき ---------- */
+async function fromCanvas(c){const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));return{blob,src:c.toDataURL('image/jpeg',.75)}}
+function drawPad(el,onDone,onCancel,base){
+  const COLS=['#222222','#e0533d','#f59e0b','#facc15','#3fb56a','#3b82d6','#8b5cf6','#ec4899','#8b5a2b','#ffffff'];
+  el.innerHTML=`<div class="padbox"><canvas class="cv" width="320" height="320"></canvas><div class="tools">
+  <div class="sw">${COLS.map((c,i)=>`<i data-c="${c}" style="background:${c}" class="${i?'':'on'}"></i>`).join('')}</div>
+  <label class="sz">太さ<input type="range" min="2" max="28" value="8"></label>
+  <div class="row"><button class="alt on" data-a="pen">✏ ペン</button><button class="alt" data-a="fill">🪣 塗りつぶし</button><button class="alt" data-a="eraser">🧽 消しゴム</button></div>
+  <div class="row"><button class="alt" data-a="undo">↩ もどす</button><button class="alt" data-a="clear">🗑 全消し</button></div>
+  <div class="row"><button data-a="ok">✅ このモンスターで決定</button><button class="alt" data-a="cancel">やめる</button></div><div class="err" id="padmsg"></div></div></div>`;
+  const cv=el.querySelector('canvas'),x=cv.getContext('2d');
+  x.fillStyle='#fff';x.fillRect(0,0,320,320);x.lineCap='round';x.lineJoin='round';
+  if(base){const im=new Image();im.onload=()=>{const k=Math.min(320/im.width,320/im.height);x.drawImage(im,(320-im.width*k)/2,(320-im.height*k)/2,im.width*k,im.height*k)};im.src=base}
+  let col=COLS[0],tool='pen',er=false,size=8,drawing=false,last=null;const hist=[];
+  const snap=()=>{hist.push(x.getImageData(0,0,320,320));if(hist.length>20)hist.shift()};
+  const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*320/r.width,(e.clientY-r.top)*320/r.height]};
+  const dot=p=>{x.fillStyle=er?'#fff':col;x.beginPath();x.arc(p[0],p[1],size/2,0,7);x.fill()};
+  const floodFill=p=>{
+    const W=320,H=320,img=x.getImageData(0,0,W,H),d=img.data,sx=Math.max(0,Math.min(W-1,Math.floor(p[0]))),sy=Math.max(0,Math.min(H-1,Math.floor(p[1]))),i0=(sy*W+sx)*4;
+    const tr=d[i0],tg=d[i0+1],tb=d[i0+2],nr=parseInt(col.slice(1,3),16),ng=parseInt(col.slice(3,5),16),nb=parseInt(col.slice(5,7),16);
+    if(Math.abs(tr-nr)+Math.abs(tg-ng)+Math.abs(tb-nb)<8)return;
+    const ok=i=>Math.abs(d[i]-tr)+Math.abs(d[i+1]-tg)+Math.abs(d[i+2]-tb)<=70;
+    const seen=new Uint8Array(W*H),st=[sy*W+sx];seen[st[0]]=1;
+    while(st.length){
+      const q=st.pop(),i=q*4,X=q%W,Y=(q/W)|0;
+      d[i]=nr;d[i+1]=ng;d[i+2]=nb;d[i+3]=255;
+      if(X>0&&!seen[q-1]&&ok(i-4)){seen[q-1]=1;st.push(q-1)}
+      if(X<W-1&&!seen[q+1]&&ok(i+4)){seen[q+1]=1;st.push(q+1)}
+      if(Y>0&&!seen[q-W]&&ok(i-W*4)){seen[q-W]=1;st.push(q-W)}
+      if(Y<H-1&&!seen[q+W]&&ok(i+W*4)){seen[q+W]=1;st.push(q+W)}
+    }
+    x.putImageData(img,0,0);
+  };
+  cv.onpointerdown=e=>{e.preventDefault();snap();if(tool==='fill'){floodFill(pos(e));return}cv.setPointerCapture(e.pointerId);drawing=true;last=pos(e);dot(last)};
+  cv.onpointermove=e=>{if(!drawing)return;const p=pos(e);x.strokeStyle=er?'#fff':col;x.lineWidth=size;x.beginPath();x.moveTo(last[0],last[1]);x.lineTo(p[0],p[1]);x.stroke();last=p};
+  cv.onpointerup=cv.onpointercancel=()=>{drawing=false};
+  const setTool=t=>{tool=t;er=t==='erase';[['pen','pen'],['fill','fill'],['eraser','erase']].forEach(([a,k])=>el.querySelector('[data-a='+a+']').classList.toggle('on',k===t));cv.style.cursor=t==='fill'?'cell':'crosshair'};
+  el.querySelectorAll('.sw i').forEach(i=>i.onclick=()=>{col=i.dataset.c;if(tool==='erase')setTool('pen');el.querySelectorAll('.sw i').forEach(j=>j.classList.toggle('on',j===i))});
+  el.querySelector('input[type=range]').oninput=e=>{size=+e.target.value};
+  el.querySelector('[data-a=pen]').onclick=()=>setTool('pen');
+  el.querySelector('[data-a=fill]').onclick=()=>setTool('fill');
+  el.querySelector('[data-a=eraser]').onclick=()=>setTool('erase');
+  el.querySelector('[data-a=undo]').onclick=()=>{if(hist.length)x.putImageData(hist.pop(),0,0)};
+  el.querySelector('[data-a=clear]').onclick=()=>{snap();x.fillStyle='#fff';x.fillRect(0,0,320,320)};
+  el.querySelector('[data-a=cancel]').onclick=onCancel;
+  el.querySelector('[data-a=ok]').onclick=()=>{
+    const d=x.getImageData(0,0,320,320).data;let ink=0;
+    for(let i=0;i<d.length;i+=16)if(d[i]<250||d[i+1]<250||d[i+2]<250)ink++;
+    if(ink<30){$('#padmsg').textContent='まだ何も描かれていません。モンスターを描いてね!';return}
+    onDone(cv);
+  };
+}
+/* ---------- バトル ---------- */
+let battleTok=0,ENV={st:null,temp:null,left:0,t0:0,stage:{n:'',f:null}};
+const MX={
+ fire:{ice:1.5,soft:1.5,wind:1.2,water:.5,fire:.5,rock:.8},
+ ice:{fire:1.3,water:1.5,wind:1.3,ice:.5,rock:.8,soft:.9},
+ thunder:{water:1.5,wind:1.3,soft:1.1,rock:.5,thunder:.5},
+ water:{fire:1.5,rock:1.2,thunder:1.1,soft:.8,water:.5},
+ rock:{thunder:1.3,wind:1.5,ice:1.2,fire:1.1,rock:.7},
+ wind:{poison:1.4,soft:1.2,rock:.6,wind:.5},
+ poison:{soft:1.2,rock:.7,poison:.4}
+};
+const PH={water:.8,rock:.5,soft:.7};
+/* ステージ: id は背景画像のファイル名(bg/<id>.webp|jpg|png)。画像がなければグラデーションで表示 */
+const STAGES=[
+ {id:'plain',n:'草原',f:'grass',g:'radial-gradient(circle at 80% 15%,#fff7b0 0 5%,transparent 5.5%),linear-gradient(180deg,#58b4ee 0,#b5e6f7 48%,#5aa84a 48%,#2d6a2b 100%)'},
+ {id:'rain',n:'雨の草原',f:'water',g:'linear-gradient(180deg,#5f7788 0,#9fb3bf 50%,#4f7f4a 50%,#2f5a2f 100%)'},
+ {id:'volcano',n:'火山',f:'fire',g:'radial-gradient(ellipse at 50% 62%,rgba(255,200,60,.7) 0,transparent 45%),linear-gradient(180deg,#2b0a0a 0,#7a1c10 45%,#ff6a1f 62%,#3a0d08 62%,#160504 100%)'},
+ {id:'swamp',n:'毒の沼地',f:'poison',g:'radial-gradient(ellipse at 50% 55%,rgba(160,80,200,.45) 0,transparent 50%),linear-gradient(180deg,#1d2a1a 0,#4a5a2a 48%,#2c3a24 48%,#12190f 100%)'},
+ {id:'graveyard',n:'墓地',f:'dark',g:'radial-gradient(circle at 75% 20%,#e8e4ff 0 4%,transparent 4.5%),linear-gradient(180deg,#181326 0,#3a2f52 55%,#201a2c 55%,#0c0910 100%)'},
+ {id:'mud',n:'泥沼',f:'mud',g:'linear-gradient(180deg,#8a7a5a 0,#b5a37c 48%,#6b5638 48%,#3e3020 100%)'},
+ {id:'storm',n:'雷雨',f:'thunder',g:'radial-gradient(circle at 70% 25%,rgba(255,240,120,.6) 0,transparent 25%),linear-gradient(180deg,#14172c 0,#3a3f6a 55%,#20243c 55%,#0b0d18 100%)'},
+ {id:'moon',n:'月夜',f:null,g:'radial-gradient(circle at 78% 18%,#fff6c9 0 5%,rgba(255,246,201,.25) 5.2% 10%,transparent 10.5%),linear-gradient(180deg,#0d1b3d 0,#2a3f78 55%,#1b2a50 55%,#0a1226 100%)'},
+ {id:'cave',n:'洞窟',f:'dark',g:'radial-gradient(circle at 50% 40%,rgba(120,120,160,.25) 0,transparent 40%),linear-gradient(180deg,#0a0a12 0,#1c1b2a 55%,#121018 55%,#050508 100%)'},
+ {id:'fogforest',n:'濃霧の森',f:'fog',g:'linear-gradient(180deg,#8fa59a 0,#c5d3cb 45%,#4a6b55 45%,#1f3a2a 100%)'},
+ {id:'fogmtn',n:'濃霧の山',f:'fog',g:'linear-gradient(180deg,#a9b6c4 0,#dfe6ec 40%,#7e8fa0 40%,#566574 100%)'},
+ {id:'snow',n:'雪山',f:'wind',g:'linear-gradient(180deg,#bfe0f5 0,#f4fbff 50%,#dfeaf2 50%,#a9c0d0 100%)'},
+ {id:'sea',n:'海の上',f:'water',g:'linear-gradient(180deg,#8fd3f5 0,#d7f1fb 45%,#2f7fc0 45%,#154f86 100%)'},
+ {id:'arena',n:'闘技場の内部',f:null,g:'radial-gradient(ellipse at 30% 0,rgba(255,255,220,.5) 0,transparent 40%),radial-gradient(ellipse at 70% 0,rgba(255,255,220,.5) 0,transparent 40%),linear-gradient(180deg,#1c2a55 0,#4560a8 50%,#8a6a3a 50%,#4d3a20 100%)'},
+ {id:'fort',n:'崩れかけた砦',f:null,g:'linear-gradient(180deg,#6f6a62 0,#a39c90 50%,#6a5e4c 50%,#3a3226 100%)'},
+ {id:'castle',n:'立派な城の中',f:null,g:'linear-gradient(180deg,#d9c58a 0,#f1e4b8 50%,#b08a4a 50%,#7a5a2a 100%)'},
+ {id:'evil',n:'邪悪な城の中(ボス部屋)',f:null,boss:true,g:'radial-gradient(circle at 50% 22%,#ff3a3a 0 7%,rgba(255,58,58,.25) 7.2% 13%,transparent 13.5%),linear-gradient(180deg,#05000d 0,#2a0a45 55%,#5a0e3a 78%,#12031a 78%,#05000a 100%)'}
+];
+const FLASH={wind:'fl-wind',fire:'fl-fire',poison:'fl-poison',thunder:'fl-thunder',dark:'fl-debuff',fog:'fl-ice',forest:'fl-heal',grass:'fl-heal',water:'fl-water',mud:'fl-debuff'};
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const curField=()=>ENV.temp||ENV.st;
+const isSea=m=>/魚|イカ|タコ|カニ|エビ|貝|クラゲ|サメ|海/.test(m.type||'');
+/* 能力の倍率: フィールド(水)・ドーピング・呪い・応援 */
+function smul(m){
+  const f=curField();
+  return(f==='water'?(isSea(m)?1.25:m.elem==='fire'?.8:1):1)*(m.st.dope>0?1.25:1)*(m.st.curse>0?.8:1)*(m.cheer>0?1.3:1);
+}
+const pa=m=>m.D.patk*m.mul.pa*smul(m)*(m.st.poison>0?.8:1)*(m.st.rage>0?1.3:1);
+const pd=m=>m.D.pdef*m.mul.pd*smul(m)*(m.st.rage>0?0:1);
+const ma=m=>m.D.matk*m.mul.ma*smul(m)*(m.st.poison>0?.8:1);
+const md=m=>m.D.mdef*m.mul.md*smul(m);
+function fresh(m){
+  m.st={};m.mul={pa:1,pd:1,ma:1,md:1};m.buffed=false;m.debuffed=false;m.g=ri(0,30);m.cheer=0;m.cheered=false;m.pend=null;m.sure=false;
+  if(m.inv){m.inv.gen.cd=0;m.inv.spc.left=1}
+  return m;
+}
+function spawn(m,sc){
+  sc=sc||1;const k=v=>Math.round(v*sc);
+  const o={...m,elem:m.elem||'none',hp:k(m.hp),str:k(m.str),hard:k(m.hard),int:k(m.int),spi:k(m.spi),skills:m.skills.map(s=>({...s}))};
+  const it=m.items||{};
+  o.inv={gen:{id:GEN[it.gen]?it.gen:'herb',cd:0},spc:{id:SPC[it.spc]?it.spc:'elixir',left:1}};
+  o.maxhp=o.hp;o.maxmp=o.mp;o.D=derive(o);return fresh(o);
+}
+function arenaHTML(A,B){
+  const s=(m,i)=>`<div class="side" id="s${i}"><div class="name">${esc(m.name)} ${m.elem!=='none'?ELM[m.elem].i:''}</div><div class="stt" id="stt${i}"></div><div class="pw">${pic(m)}<span class="fxo"></span></div>
+  <div class="bar hp"><i id="hp${i}"></i></div><div class="num" id="hn${i}"></div>
+  <div class="bar mp"><i id="mp${i}"></i></div><div class="num" id="mn${i}"></div>
+  <div class="bar gg" title="行動ゲージ"><i id="g${i}"></i></div></div>`;
+  return`<div class="fbar" id="fbar"></div><div class="arena">${s(A,0)}${s(B,1)}<div class="flash" id="flash"></div></div><div class="itbar"><div id="it0"></div><div id="it1"></div></div><div class="log" id="log"></div>`;
+}
+function gup(F){F.forEach((m,i)=>{const e=$('#g'+i);if(e)e.style.width=Math.min(100,m.g)+'%'})}
+function updF(){
+  const fb=$('#fbar'),ar=$('.arena');if(!fb||!ar)return;const f=curField();
+  const rem=ENV.t0?Math.max(0,180-(performance.now()-ENV.t0)/1000):180;
+  fb.textContent='⏱'+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0')+' ｜ 📍'+ENV.stage.n+(f?` ｜ ${FLD[f].i}${FLD[f].n}${ENV.temp?`(あと${Math.ceil(ENV.left)}秒)`:''}`:'');
+  if(f)ar.dataset.fld=f;else delete ar.dataset.fld;
+}
+function upd(F){F.forEach((m,i)=>{$('#s'+i).classList.toggle('ko',m.hp<=0);
+  $('#hp'+i).style.width=100*m.hp/m.maxhp+'%';$('#mp'+i).style.width=m.maxmp?100*m.mp/m.maxmp+'%':'0';
+  $('#hn'+i).textContent=`HP ${m.hp}/${m.maxhp}`;$('#mn'+i).textContent=`MP ${m.mp}/${m.maxmp}`;
+  $('#stt'+i).textContent=STK.filter(k=>m.st[k]>0).map(k=>STN[k].i+STN[k].n).join(' ')+(m.cheer>0?' 📣':'');});gup(F);updF();itemUI(F)}
+function log(t,k){const l=$('#log');if(!l)return;l.insertAdjacentHTML('beforeend',`<p class="${k||''}">${t}</p>`);l.scrollTop=l.scrollHeight}
+
+/* ---------- アイテム(モンスターが自分の判断で使う)・お宝 ---------- */
+const GEN={herb:{n:'薬草',i:'🌿'},water:{n:'魔法の水',i:'💧'},molotov:{n:'火炎瓶',i:'🍾'},cure:{n:'万能薬',i:'💊'}};
+const SPC={elixir:{n:'エリクサー',i:'🧪'},bomb:{n:'超ばくだん',i:'💣'},charm:{n:'必中のお札',i:'📿'}};
+function itemTxt(m){const it=m.items;return it&&GEN[it.gen]&&SPC[it.spc]?`${GEN[it.gen].i}${GEN[it.gen].n}(何回でも) / ${SPC[it.spc].i}${SPC[it.spc].n}(1回)`:''}
+function invGet(){try{return JSON.parse(localStorage.getItem('mb_inv')||'{}')}catch(e){return{}}}
+function invSet(o){try{localStorage.setItem('mb_inv',JSON.stringify(o))}catch(e){}}
+function collGet(){const v=invGet(),c=v.coll||[];if(v.treasure&&!c.some(x=>x.name===v.treasure.name))c.push({...v.treasure,ts:Date.now()});return c}
+function invBar(){return`🎁 お宝コレクション ${collGet().length}個`}
+/* お宝: 倒した相手が一律30%で落とす(コレクション用。戦闘能力とは無関係) */
+function dropTreasure(m,id){
+  if(!m.treasure||Math.random()>.3)return null;
+  const v=invGet();v.coll=collGet();delete v.treasure;
+  const dup=v.coll.some(x=>x.name===m.treasure);
+  if(!dup)v.coll.push({name:m.treasure,from:m.name,id:id||'',ts:Date.now()});
+  invSet(v);if(id)zk(id,'got');
+  return{name:m.treasure,dup};
+}
+function motionOf(s){
+  if(!s||s.kind==='item')return'lunge';
+  if(['dash','jump','spin'].includes(s.motion))return s.motion==='dash'?'lunge':s.motion;
+  let h=0;for(const c of s.name)h=(h*31+c.charCodeAt(0))>>>0;
+  return['lunge','jump','spin'][h%3];
+}
+function pick(a,t){
+  const u=a.skills.filter(s=>s.mp<=a.mp),low=a.hp<a.maxhp*.4,cf=curField(),c=[[null,.9]];
+  u.forEach(s=>{
+    let w=1;
+    if(s.kind==='heal')w=low?4:0;
+    else if(s.kind==='buff')w=a.buffed?0:1.2;
+    else if(s.kind==='debuff')w=t.debuffed?0:1;
+    else if(s.kind==='status'){
+      if(s.st==='dope'||s.st==='rage')w=a.st[s.st]>0?0:1.2;
+      else w=(t.st[s.st]>0||(SKIP.includes(s.st)&&SKIP.some(k=>t.st[k]>0)))?0:1.5;
+    }
+    else if(s.kind==='field')w=cf===s.fld?0:.9;
+    else w=1.2*(s.elem!=='none'?((MX[s.elem]&&MX[s.elem][t.elem])||1):1);
+    if(w>0)c.push([s,w]);
+  });
+  const g=a.inv.gen,sp=a.inv.spc;
+  if(g.cd<=0){
+    let w=0;
+    if(g.id==='herb')w=a.hp<a.maxhp*.45?3.5:0;
+    else if(g.id==='water')w=(a.mp<a.maxmp*.3&&a.skills.some(x=>x.mp>a.mp))?3:0;
+    else if(g.id==='molotov')w=1;
+    else if(g.id==='cure')w=['poison','burn','curse'].some(k=>a.st[k]>0)?3:0;
+    if(w>0)c.push([{kind:'item',slot:'gen',name:GEN[g.id].n,mp:0,elem:'none',power:0},w]);
+  }
+  if(sp.left>0){
+    let w=0;
+    if(sp.id==='elixir')w=a.hp<a.maxhp*.3?5:0;
+    else if(sp.id==='bomb')w=t.hp>t.maxhp*.5?.9:.3;
+    else if(sp.id==='charm')w=(!a.sure&&t.D.eva>.15)?1.5:0;
+    if(w>0)c.push([{kind:'item',slot:'spc',name:SPC[sp.id].n,mp:0,elem:'none',power:0},w]);
+  }
+  let r=Math.random()*c.reduce((x,y)=>x+y[1],0);
+  for(const [s,w] of c){r-=w;if(r<=0)return s}
+  return null;
+}
+/* ダメージ: 物理=物攻/物防、魔法=魔攻/魔防。属性相性・タイプ特性・フィールド・会心 */
+function calc(a,t,s){
+  const kind=s?s.kind:'attack',phys=kind==='attack',elem=(s&&s.elem)||'none';
+  const av=phys?pa(a):ma(a),dv=phys?pd(t):md(t);
+  const raw=(s?av*(.6+s.power/25):av)-dv*.5;
+  const em=elem!=='none'?((MX[elem]&&MX[elem][t.elem])||1):1;
+  let mult=em;const f=curField();
+  if(phys&&PH[t.elem])mult*=PH[t.elem];
+  if(elem==='fire'&&f==='wind')mult*=1.3;
+  if(elem==='fire'&&f==='fog')mult*=.6;
+  const crit=(phys&&f==='dark')||Math.random()<a.D.crit;
+  return{v:Math.max(1,Math.round(raw*mult*rnd(.85,1.15)*(crit?1.5:1))),mult,em,crit,elem,hard:phys&&PH[t.elem]<=.5};
+}
+function hurt(t,v,i,vis,info){
+  info=info||{};const big=info.em>=1.4||info.crit;
+  setTimeout(()=>{sfx(EK.includes(vis)?vis:'hit');if(info.em>=1.4)sfx('weak')},130);
+  t.hp=Math.max(0,t.hp-v);
+  fx(i,'f-'+vis);flash(vis==='hit'?'fl-red':'fl-'+vis);
+  pop(i,(info.crit?'CRITICAL ':'')+(info.em>=1.4?'弱点! ':'')+v,'dmg'+(big?' big':''));
+  if(info.crit)fx(i,'blow'+i,1000);
+  if(big){const ar=$('.arena');if(ar){ar.classList.remove('shk');void ar.offsetWidth;ar.classList.add('shk')}}
+}
+const LONG=['poison','burn','dope','rage','curse'];
+function giveSt(t,ti,st,p,self){
+  const imm={burn:'fire',freeze:'ice',para:'thunder',poison:'poison',relax:'heal'};
+  if(t.st[st]>0)return false;
+  if(!self&&(imm[st]===t.elem||Math.random()>p*(1-Math.min(.7,(t.spi||0)*.005))))return false;
+  t.st[st]=LONG.includes(st)?12:st==='sleep'?3:2;
+  fx(ti,st==='poison'?'f-poison':(self?'f-buff':'f-debuff'));pop(ti,STN[st].i+STN[st].n,self?'buff':'dbf');
+  log(`${esc(t.name)}は<span class="k">${STN[st].n}</span>になった!`);return true;
+}
+const TRAIT={fire:'burn',ice:'freeze',thunder:'para',poison:'poison',heal:'relax'};
+async function useItem(F,i,slot){
+  const a=F[i],t=F[1-i],ti=1-i,sl=a.inv[slot],id=sl.id,d=(slot==='gen'?GEN:SPC)[id];
+  if(slot==='gen')sl.cd=6;else sl.left=0;
+  log(`${esc(a.name)}は${d.i}<span class="k">${d.n}</span>を使った!`);
+  const heal=(txt,fl)=>{fx(i,'f-heal');flash(fl||'fl-heal');pop(i,txt,'heal');sfx('heal')};
+  if(id==='herb'){const v=Math.round(a.maxhp*.25);a.hp=Math.min(a.maxhp,a.hp+v);heal('+'+v)}
+  else if(id==='water'){const v=Math.round(a.maxmp*.4);a.mp=Math.min(a.maxmp,a.mp+v);heal('MP+'+v,'fl-water')}
+  else if(id==='cure'){STK.forEach(x=>{a.st[x]=0});heal('治った!')}
+  else if(id==='elixir'){const v=a.maxhp-a.hp;a.hp=a.maxhp;heal('+'+v)}
+  else if(id==='molotov'){
+    const mult=(MX.fire&&MX.fire[t.elem])||1,v=Math.max(5,Math.round((28+ma(a)*.4)*mult*rnd(.9,1.1)));
+    hurt(t,v,ti,'fire',{em:mult});log(`${esc(t.name)}に<span class="k">${v}</span>ダメージ`);if(t.hp>0)giveSt(t,ti,'burn',.5);
+  }else if(id==='bomb'){
+    const v=Math.round(t.maxhp*.3*rnd(.9,1.1))+20;
+    hurt(t,v,ti,'fire',{crit:true});log(`${esc(t.name)}に<span class="k">${v}</span>の大ダメージ!`);
+  }else if(id==='charm'){a.sure=true;fx(i,'f-buff');flash('fl-buff');pop(i,'必中!','buff');sfx('buff')}
+  upd(F);await sleep(550);
+}
+async function act(F,ai){
+  const a=F[ai],t=F[1-ai],ti=1-ai,s=pick(a,t);
+  if(s&&s.kind==='item'){await useItem(F,ai,s.slot);return}
+  if(s)a.mp-=s.mp;
+  const kind=s?s.kind:'attack';
+  if(!s)log(`${esc(a.name)}のこうげき!`);
+  else log(`${esc(a.name)}は<span class="k">${esc(s.name)}</span>${s.elem&&s.elem!=='none'?ELM[s.elem].i:''}を使った!`);
+  if(kind==='attack'||kind==='magic'){
+    const phys=kind==='attack';
+    if(phys)fx(ai,motionOf(s)+ai,550);
+    sfx(phys?'atk':'magic');await sleep(phys?(motionOf(s)==='lunge'?150:300):300);
+    if(phys){
+      const f=curField(),ev=Math.min(.85,Math.max(0,t.D.eva*smul(t)-a.D.spd*.0008+(f==='dark'?.5:f==='fog'?.15:0)));
+      if(a.sure){a.sure=false;log('必中のお札の力で命中!')}
+      else if(Math.random()<ev){fx(ti,'dodge'+ti,450);pop(ti,'MISS','miss');sfx('miss');log(`${esc(t.name)}はひらりとかわした!`);upd(F);await sleep(500);return}
+    }
+    const c=calc(a,t,s);
+    hurt(t,c.v,ti,c.elem!=='none'?c.elem:(phys?'hit':'magic'),c);
+    log(`${esc(t.name)}に<span class="k">${c.v}</span>ダメージ`+(c.crit?' (会心の一撃!)':'')+(c.em>=1.4?` <span class="k">${ELM[c.elem].n}が弱点!</span>`:c.em<=.6?` (${ELM[c.elem].n}はいまひとつ…)`:c.hard?' (かたくて通りにくい…)':''));
+    if(t.hp>0){
+      if(c.elem!=='none'&&TRAIT[c.elem])giveSt(t,ti,TRAIT[c.elem],.22);
+      const sl=SKIP.find(k=>t.st[k]>0);if(sl&&Math.random()<.4){t.st[sl]=0;log(`${esc(t.name)}は目を覚ました!`)}
+    }
+  }else if(kind==='heal'){
+    const v=Math.round(ma(a)*s.power/10*rnd(.9,1.1)*(a.elem==='heal'?1.3:1)+10);a.hp=Math.min(a.maxhp,a.hp+v);fx(ai,'f-heal');flash('fl-heal');pop(ai,'+'+v,'heal');sfx('heal');log(`${esc(a.name)}のHPが${v}回復`);
+  }else if(kind==='buff'){
+    a.mul.pa*=1.2;a.mul.pd*=1.2;a.mul.md*=1.2;a.buffed=true;fx(ai,'f-buff');flash('fl-buff');pop(ai,'能力↑','buff');sfx('buff');log(`${esc(a.name)}の攻撃と守備が上がった!`);
+  }else if(kind==='debuff'){
+    t.mul.pd*=.8;t.mul.md*=.8;t.mul.pa*=.85;a.debuffed=false;t.debuffed=true;fx(ti,'f-debuff');flash('fl-debuff');pop(ti,'能力↓','dbf');sfx('debuff');log(`${esc(t.name)}の攻撃と守備が下がった!`);
+  }else if(kind==='status'){
+    sfx('debuff');await sleep(250);
+    const self=s.st==='dope'||s.st==='rage';
+    if(!(self?giveSt(a,ai,s.st,1,true):giveSt(t,ti,s.st,.9)))log('しかし、ききめがなかった!');
+  }else if(kind==='field'){
+    ENV.temp=s.fld;ENV.left=15;flash(FLASH[s.fld]||'fl-buff');sfx('magic');log(`${FLD[s.fld].i}<span class="k">${FLD[s.fld].n}</span>が広がった!(15秒)`);
+  }
+  upd(F);await sleep(550);
+}
+/* 時間経過: 毒・炎上のダメージ、フィールド効果、持続系の状態異常のカウントダウン */
+async function tick(F){
+  const f=curField();
+  F.forEach((m,i)=>{
+    if(m.hp<=0)return;const mx=m.maxhp;
+    const d=(v,why)=>{m.hp=Math.max(0,m.hp-v);pop(i,v,'dmg');sfx('dot');log(`${esc(m.name)}は${why}で${v}ダメージ`)};
+    if(m.st.poison>0){d(Math.max(1,Math.round(mx*.04)),'毒');m.st.poison-=3}
+    if(m.hp>0&&m.st.burn>0){d(Math.max(1,Math.round(mx*.035)),'炎上');m.st.burn-=3}
+    ['dope','rage','curse'].forEach(k=>{if(m.st[k]>0)m.st[k]-=3});
+    if(m.hp>0&&((f==='fire'&&m.elem!=='fire')||(f==='poison'&&m.elem!=='poison')||(f==='thunder'&&m.elem!=='thunder')))d(Math.max(1,Math.round(mx*.03)),FLD[f].n);
+    if(m.hp>0&&(f==='forest'||f==='grass')&&m.elem==='heal'){const v=Math.max(1,Math.round(mx*.03));m.hp=Math.min(mx,m.hp+v);pop(i,'+'+v,'heal')}
+  });
+  upd(F);await sleep(250);
+}
+/* ---------- 応援ボタン(バトル中1回だけ) ---------- */
+function setupCheer(F,sides){
+  F.forEach((m,i)=>{
+    const box=$('#it'+i);if(!box)return;
+    box.innerHTML=(sides&&sides[i]?'<button class="itb" data-k="cheer">📣 応援!</button>':'')+'<span class="itl"></span>';
+    const b=box.querySelector('button');
+    if(b)b.onclick=()=>{if(!m.cheered&&m.hp>0&&!m.pend)m.pend='cheer'};
+  });
+}
+function itemUI(F){
+  F.forEach((m,i)=>{
+    const box=$('#it'+i);if(!box||!m.inv)return;
+    const l=box.querySelector('.itl'),b=box.querySelector('button'),g=m.inv.gen.id,s=m.inv.spc;
+    if(l)l.textContent=`🎒 ${GEN[g].i}${GEN[g].n}∞ / ${SPC[s.id].i}${SPC[s.id].n}${s.left>0?'×1':'(使用済)'}`;
+    if(b){b.disabled=m.cheered||m.hp<=0;b.textContent=m.cheer>0?'📣 応援中!':m.cheered?'📣 応援済み':'📣 応援!'}
+  });
+}
+async function doCheer(F,i){
+  const m=F[i];m.cheered=true;m.cheer=6;
+  log(`📣 ${esc(m.name)}を応援! 数秒間、能力アップ!`,'k');fx(i,'f-buff');flash('fl-buff');pop(i,'応援!','buff');sfx('buff');
+  upd(F);await sleep(500);
+}
+/* ATB方式: 行動ゲージが早さに応じて溜まり、100で行動。速いほど連続で動ける。制限時間は3分 */
+async function battle(A,B,stage,opts){
+  const tok=++battleTok,F=[A,B];stage=stage||STAGES[0];
+  ENV={st:stage.f,temp:null,left:0,stage,t0:performance.now()};setStage(stage);
+  A.g=ri(0,30);B.g=ri(0,30);
+  $('#arenaBox').innerHTML=arenaHTML(A,B);setupCheer(F,opts&&opts.cheer);upd(F);
+  B.lv>=5?bgmStart(184,'boss'):bgmStart(B.lv>=4?160:150,'battle');
+  log(B.lv>=5?`⚠ ボス ${esc(B.name)} があらわれた!`:`${esc(A.name)} VS ${esc(B.name)} 開始!`,'k');
+  if(stage.f)log(`${FLD[stage.f].i}${stage.n}は${FLD[stage.f].n}!`);
+  await sleep(800);
+  ENV.t0=performance.now();
+  let n=0,last=performance.now(),acc=0;
+  while(tok===battleTok&&A.hp>0&&B.hp>0&&n<400&&performance.now()-ENV.t0<180000){
+    const pi=F.findIndex(m=>m.pend&&m.hp>0);
+    if(pi>=0){F[pi].pend=null;await doCheer(F,pi);last=performance.now();continue}
+    const r=F.filter(m=>m.g>=100&&m.hp>0).sort((x,y)=>y.g-x.g)[0];
+    if(r){
+      r.g-=100;n++;const ri2=F.indexOf(r),sk=SKIP.find(k=>r.st[k]>0);
+      if(sk){r.st[sk]--;pop(ri2,STN[sk].i,'miss');log(`${esc(r.name)}は${STN[sk].n}で動けない!`);upd(F);await sleep(500)}
+      else await act(F,ri2);
+      last=performance.now();continue;
+    }
+    await sleep(40);
+    const now=performance.now(),dt=Math.min(.1,(now-last)/1000);last=now;
+    const f=curField(),gm=(f==='wind')?.5:(f==='mud')?.6:1;
+    F.forEach(m=>{m.g+=(10+m.D.spd*smul(m))*dt*gm;if(m.cheer>0)m.cheer-=dt;if(m.inv.gen.cd>0)m.inv.gen.cd-=dt});
+    if(ENV.temp){ENV.left-=dt;if(ENV.left<=0){ENV.temp=null;log('環境の効果が消えた…')}}
+    acc+=dt;if(acc>=3){acc-=3;await tick(F);last=performance.now()}
+    gup(F);updF();
+  }
+  if(tok!==battleTok)throw new Error('abort');
+  if(A.hp>0&&B.hp>0)log('⏰ 時間切れ! 残りHPの割合で勝敗を決めます','k');
+  const w=A.hp/A.maxhp>=B.hp/B.maxhp?A:B,win=A.hp<=0?B:B.hp<=0?A:w;
+  bgmStop();log(`${esc(win.name)}の勝利!`,'k');sfx('win');
+  return win===A;
+}
+
+/* ---------- 敵モンスター(図鑑データ) ---------- */
+const S=(name,kind,power,mp,elem,x)=>({name,kind,power,mp,elem:elem||'none',st:'',fld:'',motion:'',...(x||{})});
+const FOES=[
+ {id:'slime',img:'slime',lv:1,name:'スライム',type:'スライム',size:3,elem:'none',hp:70,mp:20,str:20,hard:12,int:14,spi:10,spd:22,lck:18,bonus:{},
+  skills:[S('ぷるぷるアタック','attack',10,4),S('じこさいせい','heal',8,8)],items:{gen:'herb',spc:'elixir'},treasure:'きらめく水玉',
+  story:'谷あいの小さな泉で、朝日をあびて生まれた水のかたまり。生まれて最初に見たのが自分の顔だったので、水たまりを見るたびに「かわいい」とうっとりする。こだわりはつやつやの肌で、毎朝三十分かけて磨いている。普段は旅人の靴の上に乗って運んでもらうのが日課だが、いつも靴のにおいで気絶する。それでも別れ際には手を振り、泉に戻ってくる。いつか海を見るのが夢で、毎晩、雨雲に「連れていって」と頼んでいる。'},
+ {id:'fbat',img:'fbat',lv:1,name:'ふるーつばっと',type:'獣',size:2,elem:'none',hp:60,mp:25,str:18,hard:8,int:20,spi:14,spd:50,lck:50,bonus:{},
+  skills:[S('かじる','attack',10,4,'none',{motion:'jump'}),S('あまいかおり','status',0,8,'none',{st:'sleep'}),S('フルーツをたべる','heal',8,6)],items:{gen:'herb',spc:'charm'},treasure:'ちいさなブドウ',
+  story:'果物畑のとなりの洞窟で生まれた、果物が大好きなコウモリ。生まれて初めて食べたイチゴの甘さに感動し、「世界中の果物を食べ尽くす」と決めた。こだわりは完熟で、少しでも固いと「まだ早い!」とぷんぷん怒る。普段は昼寝をして、夜になると甘い香りをたどって旅に出る。ところが食いしん坊なので毎回太って飛べなくなり、仲間に引きずって帰られる。それでも次の朝には、またぶどうを抱えて笑っている。'},
+ {id:'nabe',img:'nabe',lv:1,name:'ねこなべ',type:'獣',size:3,elem:'heal',hp:80,mp:40,str:14,hard:14,int:26,spi:30,spd:20,lck:40,bonus:{},
+  skills:[S('ぷにぷにパンチ','attack',10,5,'heal'),S('ほかほかのゆげ','heal',12,8),S('おだしのかおり','field',0,10,'none',{fld:'grass'})],items:{gen:'herb',spc:'elixir'},treasure:'だしのきいた土鍋',
+  story:'寒い冬の夜、ぐつぐつ煮えるお鍋の中から「あったかい…」と顔を出した、猫と竜のあいのこ。どうして鍋の中で生まれたのかは、本人にも分からない。こだわりはだしの味で、昆布とかつおのバランスに口うるさい。普段はお鍋につかったまま、旅人に具材を分けて暮らしている。食べられそうになると、いつも「だめにゃ!」と叫ぶ。実は食べてもらうより、みんなで囲んでもらうことが、いちばんの幸せなのだ。'},
+ {id:'hikkuri',img:'hikkuri',lv:1,name:'ひっくりカエル',type:'カエル',size:4,elem:'heal',hp:90,mp:20,str:16,hard:18,int:12,spi:24,spd:10,lck:30,bonus:{},
+  skills:[S('おなかポヨン','attack',10,4),S('ひるねでかいふく','heal',8,5),S('ねむりのあくび','status',0,8,'none',{st:'sleep'})],items:{gen:'herb',spc:'elixir'},treasure:'ねぐせのついた葉っぱ',
+  story:'ころんだまま起き上がれずに、三年が過ぎたカエル。最初は恥ずかしくて動かなかったが、あおむけで見る空があまりにきれいで、そのままになった。こだわりは寝心地で、背中の下の葉っぱの数まで決めている。普段はおなかをぽんぽん叩きながら、空の雲に名前をつけて遊ぶ。ときどき近所の子どもが起こそうとするが、笑いながらまたひっくり返る。「ここがいちばんいい景色だよ」と、子どもを隣に寝かせることもある。'},
+ {id:'kani',img:'kani',lv:2,name:'おいしそうなカニ',type:'魚介',size:3,elem:'none',hp:100,mp:20,str:28,hard:34,int:10,spi:14,spd:18,lck:20,bonus:{},
+  skills:[S('ハサミでチョキ','attack',14,4),S('あわふき','magic',14,8,'water'),S('かたいこうら','buff',10,6)],items:{gen:'herb',spc:'elixir'},treasure:'つやつやの貝がら',
+  story:'波うちぎわで生まれた、まるっこいカニ。生まれたその日から「おいしそう」と言われ続け、怖くなって一生懸命ハサミを磨いた。こだわりはハサミのチョキの音で、毎朝リズムをそろえて練習している。普段は岩場で貝がらの家具を集めて暮らしているが、満月の夜だけは、食べられた仲間のために砂浜で静かにダンスをする。強がりだけれど、本当は食べられたくなくて、毎日ひっそり泣いている。'},
+ {id:'karasu',img:'karasu',lv:2,name:'カラス',type:'鳥',size:2,elem:'none',hp:75,mp:25,str:26,hard:10,int:22,spi:18,spd:58,lck:55,bonus:{},
+  skills:[S('つつく','attack',12,4),S('まいおりアタック','attack',16,6,'none',{motion:'jump'}),S('ふきつなこえ','status',0,8,'none',{st:'curse'})],items:{gen:'water',spc:'charm'},treasure:'きらきらのビー玉',
+  story:'街はずれの鐘楼で生まれた、光るものが大好きなカラス。羽に付いたクリスタルは、初めて拾った宝物を飾ったものだ。こだわりは収集で、巣の中はビー玉やボタンでいっぱい。普段は屋根の上から街をながめ、落とし物を見つけては持ち主に返しに行く。ところが返す前に自分で気に入ってしまい、結局返せず落ち込む。それでも迷子の子どもを見つけると、自慢の羽を貸して、家まで案内している。'},
+ {id:'chihuahua',img:'chihuahua',lv:2,name:'おこったチワワ',type:'獣',size:1,elem:'none',hp:70,mp:15,str:34,hard:12,int:8,spi:20,spd:48,lck:42,bonus:{},
+  skills:[S('キャンキャンかみつき','attack',14,4,'none',{motion:'spin'}),S('ぷんぷんだ!','status',0,6,'none',{st:'rage'}),S('しげみのよろい','field',0,10,'none',{fld:'grass'})],items:{gen:'herb',spc:'charm'},treasure:'みどりのクリスタル',
+  story:'森の入り口で、自分より大きな犬に吠えられたのが悔しくて、毎日怒りのトレーニングをして強くなった小さな戦士。角と苔は、怒りが強すぎて生えてきたらしい。こだわりは吠え方で、毎朝、鏡の前で十回練習する。普段は縄張りの見回りをしているが、ちっちゃいので誰も気づかない。ところが雷が鳴ると、真っ先に飼い主の足元に隠れる。実は寂しがりで、散歩の時間になると、遠くの道をずっと見つめている。'},
+ {id:'dokugaeru',img:'dokugaeru',lv:2,name:'どくガエル',type:'カエル',size:4,elem:'poison',hp:110,mp:35,str:20,hard:24,int:28,spi:26,spd:16,lck:22,bonus:{},
+  skills:[S('どくのしる','magic',14,8,'poison'),S('ぴょんぴょんアタック','attack',12,4,'none',{motion:'jump'}),S('どくきのこのほうし','status',0,8,'none',{st:'poison'})],items:{gen:'cure',spc:'elixir'},treasure:'むらさきのキノコ',
+  story:'雨の沼で、不思議なキノコと一緒に育った心配性のカエル。背中のキノコは、毎日水をあげて育てた大切な友だち。こだわりは毒の調合で、少しでも間違えると自分がしびれてしまう。普段は沼の端に「毒があるから近寄らないで」と注意書きの葉っぱを立てている。誰かが近づくと、うっかりくしゃみで毒を出し、あとで必ず謝りに行く。優しすぎて友だちが少ないが、キノコだけは、いつも隣で笑っている。'},
+ {id:'iceslime',img:'iceslime',lv:3,name:'こおりスライム',type:'スライム',size:3,elem:'ice',hp:120,mp:40,str:24,hard:30,int:36,spi:32,spd:24,lck:22,bonus:{},
+  skills:[S('こおりのつぶて','magic',16,8,'ice'),S('ひえひえタックル','attack',14,5,'ice'),S('かちこちのいき','status',0,10,'none',{st:'freeze'})],items:{gen:'water',spc:'elixir'},treasure:'とけない氷のかけら',
+  story:'雪山のてっぺんで、凍った朝露が固まって生まれた氷のスライム。体のクリスタルは、冬が来るたびに少しずつ増えていく。こだわりは透明感で、曇りを見つけると息を吹きかけて磨く。普段は日陰で涼しくすごしているが、夏が大の苦手で、毎年、溶けそうになっては泣いている。それでも旅人にかき氷を作ってあげるのが生きがいで、何度溶けても、また冷たい朝に戻ってくる。'},
+ {id:'thunderslime',img:'thunderslime',lv:3,name:'かみなりスライム',type:'スライム',size:3,elem:'thunder',hp:120,mp:40,str:22,hard:22,int:40,spi:28,spd:40,lck:28,bonus:{},
+  skills:[S('ぱちぱちショック','magic',16,8,'thunder'),S('びりびりタックル','attack',14,5,'thunder'),S('しびれのでんき','status',0,10,'none',{st:'para'})],items:{gen:'cure',spc:'charm'},treasure:'せいでんきのたま',
+  story:'大きな雷が地面に落ちた日、水たまりが驚いて生まれた雷のスライム。体はいつもぱちぱちとしびれて、触れた人に「いたっ」と言われるのが悩み。こだわりはやさしく触ることで、毎日、静電気を逃がす練習をしている。普段は雷雲の下でぼんやり空を見ているが、停電の夜は、街の子どもたちのろうそく代わりにほのかに光って役に立つ。「暗いのこわいね」と言う子の隣では、いつもより、ゆっくり光る。'},
+ {id:'fireslime',img:'fireslime',lv:3,name:'もえもえスライム',type:'スライム',size:3,elem:'fire',hp:125,mp:40,str:34,hard:24,int:34,spi:24,spd:26,lck:22,bonus:{},
+  skills:[S('ひのたま','magic',16,8,'fire'),S('もえもえタックル','attack',16,6,'fire'),S('やけどのいき','status',0,8,'none',{st:'burn'}),S('ほのおのだいち','field',0,12,'none',{fld:'fire'})],items:{gen:'molotov',spc:'bomb'},treasure:'くすぶる火の粉',
+  story:'くすぶる焚き火の灰の中から、不満いっぱいの顔で生まれた炎のスライム。生まれたてのころ、うっかり自分の寝床を焼いてしまい、それ以来いつもプンプン怒っている。こだわりは火力の調整で、強すぎず弱すぎない「ちょうどいい」を探している。普段は焚き火のそばで旅人の鍋を温め、感謝されると真っ赤になって照れる。本当は怒っているのではなく、あたたかい人になりたいだけ。照れ隠しの顔が、いつも怒り顔なのだ。'},
+ {id:'kaeru',img:'kaeru',lv:3,name:'のっしりガエル',type:'カエル',size:6,elem:'none',hp:150,mp:25,str:46,hard:38,int:16,spi:22,spd:22,lck:24,bonus:{},
+  skills:[S('ずしんボディアタック','attack',18,6,'none',{motion:'spin'}),S('ベロでぱくっ','attack',16,5),S('どっしりかまえ','buff',10,6)],items:{gen:'herb',spc:'bomb'},treasure:'カエルのふえ',
+  story:'森の池で、体が大きすぎて葉っぱに乗れず、いつも沈んでいた子ガエルが、ついにトゲとツノを手に入れた姿。のしのし歩くたびに地面が揺れ、小鳥たちが逃げてしまうのが悩み。こだわりはおなかの水玉模様で、毎日同じ数をかぞえている。普段は池のほとりで日向ぼっこをして、小さな虫たちに「踏まないで」とお願いされる。優しいので、歩くときは必ず足元を確かめる。大きな体は、今では池のみんなの屋根にもなっている。'},
+ {id:'koumori',img:'koumori',lv:3,name:'こうもりやろう',type:'獣',size:3,elem:'wind',hp:110,mp:40,str:30,hard:20,int:30,spi:28,spd:60,lck:48,bonus:{},
+  skills:[S('かぜのつばさ','magic',16,8,'wind'),S('きゅうせっきん','attack',16,5,'none',{motion:'jump'}),S('ふきぬけるかぜ','field',0,10,'none',{fld:'wind'})],items:{gen:'water',spc:'charm'},treasure:'にじ色の羽',
+  story:'古い木の枝にぶら下がって、毎晩、風の音で作曲しているコウモリ。耳の模様は、風の通り道を覚えるうちに自然に出てきたもの。こだわりは羽ばたきのリズムで、気に入らない曲は何度でもやり直す。普段は仲間に「やろう」と呼ばれてからかわれるが、気にしない。いつか最高の風の曲を作り、満月の夜に森じゅうに聴かせるのが夢。ただし、まだ一曲も完成していないので、毎晩、同じ最初の三小節だけが森に響いている。'},
+ {id:'bigkani',img:'bigkani',lv:4,name:'おおばさみカニ',type:'魚介',size:6,elem:'none',hp:220,mp:30,str:58,hard:60,int:12,spi:28,spd:20,lck:18,bonus:{atk:8,def:6},
+  skills:[S('はさみギロチン','attack',22,8,'none',{motion:'spin'}),S('からにこもる','buff',12,6),S('あわのバリア','magic',18,9,'water')],items:{gen:'cure',spc:'bomb'},treasure:'ひびの入ったはさみ',
+  story:'海のはずれの岩場で、毎日ハサミだけを鍛え続けた頑固者のカニ。片方のハサミが大きいのは、一度も休まず同じ岩を挟み続けたからだ。こだわりは岩の割り方で、いつも真っ二つのきれいな割れ目を狙っている。普段は岩場で昼寝をして、ときどきカモメに笑われる。強面で通っているが、潮だまりの小さな魚が迷い込むと、ハサミの中に入れて安全な場所まで運ぶ。その背中を見た者は、みんなそっと目をそらして、泣くのをこらえる。'},
+ {id:'vbat',img:'vbat',lv:4,name:'ちょっぴりバンパイアバット',type:'獣',size:3,elem:'none',hp:180,mp:60,str:52,hard:28,int:34,spi:30,spd:58,lck:50,bonus:{atk:4},
+  skills:[S('きゅうけつ','attack',18,8,'none',{motion:'jump'}),S('ちのじゅそ','status',0,10,'none',{st:'curse'}),S('こうもりのうた','status',0,10,'none',{st:'sleep'}),S('ふきこむやみ','field',0,12,'none',{fld:'dark'})],items:{gen:'herb',spc:'charm'},treasure:'さびた銀のきば',
+  story:'古い城の地下で生まれ、吸血鬼にあこがれて血を吸おうとしたが、実は血が苦手なコウモリ。こだわりはトマトジュースで、ストローをさして飲んでいる。普段は洞窟の天井で逆さまになりながら、吸血鬼の話を聞き集めている。いざ戦うとなると牙をむいて威嚇するが、手が震えている。でも仲間が危ないときには、真っ先に飛び出す勇気を持つ。みんなが寝静まった夜、一人で「血、にがい…」とつぶやいている。'},
+ {id:'hayabusa',img:'hayabusa',lv:4,name:'かぜのハヤブサ',type:'鳥',size:5,elem:'wind',hp:190,mp:60,str:52,hard:32,int:48,spi:42,spd:68,lck:55,bonus:{atk:4,def:3},
+  skills:[S('かまいたち','magic',20,10,'wind'),S('きゅうこうかダイブ','attack',22,8,'none',{motion:'jump'}),S('かぜをまとう','buff',12,6),S('つむじかぜ','field',0,12,'none',{fld:'wind'})],items:{gen:'herb',spc:'charm'},treasure:'ふしぎな風の羽根',
+  story:'高い山のてっぺんで、風と氷の結晶から生まれた誇り高い鳥。頭と背のクリスタルは、風に鍛えられるほど大きくなる。こだわりは急降下の角度で、一度でも決まらないと一日じゅう同じ練習をやり直す。普段は崖の上から世界を見下ろし、迷子の旅人に風で道を知らせている。孤独に見えるが、毎朝、ふもとの子どもが手を振るのを、気づかないふりをしながらずっと待っている。手を振り返せない不器用さが、いちばんの弱点だ。'},
+ {id:'madinu',img:'madinu',lv:4,name:'くるったいぬ',type:'獣',size:5,elem:'poison',hp:230,mp:40,str:66,hard:36,int:12,spi:18,spd:50,lck:20,bonus:{atk:4},
+  skills:[S('どくぎばかみつき','attack',20,7,'poison'),S('やまいのよだれ','status',0,8,'none',{st:'poison'}),S('くるいなきさけび','status',0,8,'none',{st:'rage'}),S('どくのもや','field',0,12,'none',{fld:'poison'})],items:{gen:'cure',spc:'bomb'},treasure:'さびたとげの首輪',
+  story:'かつては村の番犬だったが、毒の沼の水を飲んで病気になり、さまよい出てしまった犬。首輪のとげは、昔、守りたかった子どもが作ってくれたお守りの名残だ。こだわりは鼻でにおいをたどることで、今でも、その子のにおいだけははっきり覚えている。普段は沼のまわりを歩き続け、人が近づくと吠えて遠ざけるが、本当はうつしたくないだけ。治る日が来たら、いちばんに村へ帰り、あの子の膝の上で眠りたいと願っている。'},
+ {id:'wolf',img:'wolf',lv:4,name:'しろいおおかみ',type:'獣',size:6,elem:'ice',hp:215,mp:60,str:50,hard:36,int:44,spi:42,spd:56,lck:40,bonus:{atk:3,def:3},
+  skills:[S('ふぶきのうなり','magic',22,12,'ice'),S('こおりのキバ','attack',20,8,'ice'),S('かぜをよぶ','field',0,12,'none',{fld:'wind'}),S('やまいのいき','status',0,10,'none',{st:'curse'})],items:{gen:'herb',spc:'elixir'},treasure:'月のしずくのペンダント',
+  story:'雪の夜、月にむかって遠吠えした声が風になって、そのまま形を持った白いおおかみ。体を流れる風は、仲間を呼ぶ声が消えずに残ったものだ。こだわりは足音で、雪を踏んでも音を立てない走り方を極めた。普段は孤独に雪原をかけ、ときどき迷子の動物を風で巣まで送り届ける。病に倒れた仲間を助けようとして、自分がかかってしまった過去を持つ。それでも毎晩、月に向かって吠える。「ここにいるよ」と、誰かに届くように。'},
+ {id:'nekomata',img:'nekomata',lv:5,name:'ねこまた',type:'妖怪',size:5,elem:'fire',hp:310,mp:100,str:72,hard:50,int:92,spi:84,spd:75,lck:60,bonus:{matk:8,mdef:6,def:4},
+  skills:[S('おにびのほのお','magic',26,14,'fire'),S('ふたまたのしっぽ','attack',24,8,'none',{motion:'spin'}),S('まがまがしいのろい','status',0,12,'none',{st:'curse'}),S('ようかいのきり','field',0,12,'none',{fld:'fog'})],items:{gen:'water',spc:'elixir'},treasure:'ゆれるすず',
+  story:'百年を生きた猫が、仲間を失うたびに尻尾が増え、ついに二本の炎の尾を持つ妖怪になった。鈴は、亡くなった飼い主から最後にもらった贈り物。こだわりは毛づくろいで、一日に八回、鈴の音を整えながら行う。普段は崖の上で月を見ているが、実は人間のこたつが大好きで、冬の夜はこっそり家に忍び込み、丸くなって眠る。強く、気高く、そして寂しがり屋。鈴の音が風に鳴るたび、遠い昔の名前を、そっと呼んでいる。'},
+ {id:'hikui',img:'hikui',lv:5,name:'ヒクイドリ',type:'鳥',size:7,elem:'fire',hp:320,mp:70,str:84,hard:62,int:58,spi:56,spd:58,lck:40,bonus:{atk:6,def:6},
+  skills:[S('けヅメキック','attack',28,10,'none',{motion:'jump'}),S('クリスタルブレス','magic',28,16,'fire'),S('ほのおをたべる','status',0,12,'none',{st:'dope'}),S('こうえんダイブ','attack',26,12,'fire',{motion:'spin'})],items:{gen:'cure',spc:'bomb'},treasure:'ほのおのクリスタル',
+  story:'火山のふもとで、溶岩のたまごから生まれた火を食らう鳥。燃えるクリスタルの羽は、食べた炎が体の中で結晶になったものだ。こだわりは食事の作法で、炎は必ずよくかんで食べる。普段は火山の近くをのしのし歩き、噴火のたびに「いただきます」と手を合わせる。恐れられているが、実は冬の寒さが苦手で、冷える夜は体の炎を少しだけ強くして、迷い込んだ小動物をあたためている。毎朝、火口に向かって「今日もごちそうさま」と頭を下げている。'},
+ {id:'hyoro',img:'hyoro',lv:1,name:'ヒョロヒョロ兵士',type:'人型',size:4,elem:'none',hp:60,mp:15,str:22,hard:14,int:10,spi:12,spd:24,lck:20,bonus:{atk:2,def:2},
+  skills:[S('へっぴりごし斬り','attack',10,4),S('ひっしのさけび','status',0,6,'none',{st:'rage'}),S('ほころびたたて','buff',8,5)],items:{gen:'herb',spc:'elixir'},treasure:'母からの手紙',
+  story:'村いちばんの貧乏くじを引かされて、兵隊に取られたひょろひょろの青年。支給された鎧はぶかぶかで、剣は錆びだらけ。こだわりは生き残ることで、逃げる足の速さだけは部隊一。普段は見張りをしながら故郷の母に手紙を書き、そのたびに「今日も無事です」としか書けない。戦いでは泣きそうな顔で剣を振るが、仲間が危なくなると、盾を持って真っ先に前に出る。帰ったら母のスープを飲むのが、ただひとつの夢だ。'},
+ {id:'senshi',img:'senshi',lv:1,name:'みならいせんし',type:'獣',size:3,elem:'heal',hp:75,mp:35,str:22,hard:16,int:24,spi:24,spd:28,lck:34,bonus:{},
+  skills:[S('きのえだアタック','attack',10,4),S('はっぱのいやし','heal',10,6),S('そよかぜのまほう','magic',12,6,'wind')],items:{gen:'herb',spc:'charm'},treasure:'ちいさな薬草ぶくろ',
+  story:'森の泉のほとりで、新米の冒険者に憧れて生まれた小さな戦士。背中の剣は大きすぎて、振るたびにひっくり返る。こだわりは薬草の見分けで、旅の途中で見つけた草は必ず味見する。普段は森の動物たちに剣の稽古を見せているが、観客はいつも居眠りしている。羽が生えているのに、飛ぶと風に流されて迷子になる。それでも夜は星を見上げながら「いつか立派な戦士になる」と、みんなの寝息に向かって誓っている。'},
+ {id:'shiroobi',img:'shiroobi',lv:1,name:'しろおびコグマ',type:'獣',size:2,elem:'none',hp:70,mp:20,str:30,hard:16,int:8,spi:22,spd:36,lck:30,bonus:{},
+  skills:[S('せいけんづき','attack',12,4),S('とびげり','attack',14,5,'none',{motion:'jump'}),S('きあいため','buff',8,5)],items:{gen:'herb',spc:'charm'},treasure:'しろい帯',
+  story:'道場の見習いとして入った、小さな格闘家。白帯のままもう三年、毎日の稽古を一度も休んでいないが、組手ではいつも一番に負ける。こだわりは礼儀で、負けても必ず相手に深く頭を下げる。普段は雑巾がけと素振りの毎日で、帰り道に買う肉まんが唯一のごほうび。師匠には「お前の拳は優しすぎる」と言われ、悔しくて泣くが、道場の猫に慰められると、また次の日も、いちばん早く道場に立っている。'},
+ {id:'majokko',img:'majokko',lv:2,name:'まじょっこ',type:'人型',size:2,elem:'heal',hp:70,mp:50,str:10,hard:12,int:34,spi:30,spd:36,lck:44,bonus:{matk:4},
+  skills:[S('ほしくずまほう','magic',14,6),S('ぽかぽかポーション','heal',10,6),S('ねむりのこな','status',0,8,'none',{st:'sleep'})],items:{gen:'water',spc:'elixir'},treasure:'ほしがたのブローチ',
+  story:'魔女の森のはずれで、星くずの粉から生まれた小さな魔女っ子。継ぎはぎの服は、お母さんがわりの妖精が毎晩縫ってくれたもの。こだわりはキラキラで、魔法を使うたびに星が少しでも多く出ないと、やり直す。普段は薬びんに森のしずくを集め、迷子の動物にあげている。ところが調合を間違えて、毎回、髪の色が変わってしまう。それでも鏡を見るたびに「今日もかわいい!」と、にっこり笑っている。'},
+ {id:'nsouryo',img:'nsouryo',lv:2,name:'やさしい僧侶',type:'人型',size:5,elem:'heal',hp:90,mp:60,str:16,hard:22,int:32,spi:40,spd:24,lck:30,bonus:{matk:4,mdef:3},
+  skills:[S('せいなるひかり','magic',16,8),S('いやしのいのり','heal',14,8),S('まもりのいのり','buff',10,6)],items:{gen:'herb',spc:'elixir'},treasure:'せいなる小びん',
+  story:'小さな村の教会で、子どもたちに文字を教えながら傷を癒やしてきた女僧侶。杖の青い珠は、村の人たちが少しずつお金を出し合って贈ってくれたもの。こだわりは笑顔で、どんなに疲れていても、患者の前では必ずほほえむ。普段は朝から晩まで、薬草を煎じたり、迷子の犬を探したりと大忙し。実は雷が大の苦手で、嵐の夜は教会の毛布にくるまり、「神様、早く止めて」と小声でお願いしている。'},
+ {id:'kishi',img:'kishi',lv:2,name:'ふつうの騎士',type:'人型',size:5,elem:'none',hp:105,mp:20,str:30,hard:36,int:10,spi:20,spd:24,lck:24,bonus:{atk:3,def:4},
+  skills:[S('剣のいちげき','attack',14,5),S('たてでガード','buff',10,6),S('きりはらい','attack',16,7,'none',{motion:'spin'})],items:{gen:'herb',spc:'elixir'},treasure:'ぴかぴかのバッジ',
+  story:'騎士団の新入りとして入隊した、小柄だけれど真面目な騎士。盾の渦巻き模様は自分で描いた手作りで、実はちょっとだけ歪んでいる。こだわりは兜のつやで、毎朝三十分かけて磨き上げる。普段は城門の見張りをしているが、怪しい人が来ると、緊張のあまり「合言葉は?」と自分が先に答えてしまう。戦いに向かう前の晩は、故郷の母が縫ってくれたハンカチを握りしめて、星に祈る。'},
+ {id:'torasan',img:'torasan',lv:2,name:'たびのトラさん',type:'獣',size:6,elem:'none',hp:110,mp:40,str:30,hard:28,int:28,spi:28,spd:30,lck:40,bonus:{def:3},
+  skills:[S('つめでひっかき','attack',14,4),S('かいちゅうのつえ','magic',14,7),S('たびのうた','buff',10,6)],items:{gen:'cure',spc:'elixir'},treasure:'たびのコンパス',
+  story:'若いころに世界じゅうを旅するのが夢で、荷物を背負って国を出たトラの冒険家。リュックには地図、ランタン、鍋、そしてお土産の旗がぎっしり。こだわりは夕食で、どんな山奥でも必ず温かいスープを作る。普段はのんびり歩きながら、道ばたの花に名前をつけている。ただし方向感覚はゼロで、地図を逆さに持つ癖がある。迷うたびに「これも冒険だ」と笑うが、夜は、家族に宛てた絵はがきを、そっと書き続けている。'},
+ {id:'honoo',img:'honoo',lv:3,name:'ほのおの騎士',type:'人型',size:4,elem:'fire',hp:130,mp:40,str:34,hard:32,int:28,spi:22,spd:28,lck:22,bonus:{atk:4},
+  skills:[S('ほのおのけん','attack',16,6,'fire'),S('ひのたま','magic',16,8,'fire'),S('もえあがる','buff',12,8)],items:{gen:'molotov',spc:'bomb'},treasure:'もえるはね',
+  story:'燃える炎の鎧をまとった、火の国の若き騎士。幼いころ、火事から村人を助けようとして自分も炎に包まれた日に、この鎧を授かった。こだわりは剣の炎の色で、毎朝、いちばん澄んだ橙を選ぶ。普段は熱すぎて近くに寄れないので、仲間に「あったかい」と言われると、兜の下で真っ赤になる。実は冬のあいだだけ、凍えた旅人をそっと温めて歩いている。名前を聞かれると、いつも少しだけ照れて答える。'},
+ {id:'seiki',img:'seiki',lv:3,name:'せいなるクマ騎士',type:'獣',size:4,elem:'heal',hp:135,mp:50,str:30,hard:34,int:34,spi:36,spd:24,lck:30,bonus:{def:4,mdef:3},
+  skills:[S('せいなるつるぎ','attack',16,6),S('ひかりのいやし','heal',14,8),S('ひかりのたて','buff',10,6),S('やすらぎのひかり','status',0,8,'none',{st:'relax'})],items:{gen:'herb',spc:'elixir'},treasure:'かがやくエンブレム',
+  story:'雲の上の聖堂で生まれた、青いくまの聖騎士。ふわふわの毛は、聖なる光を浴びすぎて、いつもほんのり光っている。こだわりは盾の磨きで、顔が映るまで磨いても、まだ満足しない。普段は迷子の旅人に道を教え、お礼にもらったクッキーを大切に食べている。強い敵と戦うのは怖いけれど、仲間の前では必ず笑顔で「大丈夫!」と言う。夜、誰もいない聖堂で一人、ぎゅっとぬいぐるみを抱きしめて眠る。'},
+ {id:'mahou',img:'mahou',lv:3,name:'ほしくず魔法使い',type:'人型',size:3,elem:'none',hp:95,mp:80,str:12,hard:14,int:44,spi:38,spd:30,lck:34,bonus:{matk:6},
+  skills:[S('ぎんがのうず','magic',18,9),S('こおりのほし','magic',16,8,'ice'),S('ほしのやみ','field',0,12,'none',{fld:'dark'})],items:{gen:'water',spc:'charm'},treasure:'ほしのかけら',
+  story:'夜空の星くずが集まって生まれた、紫のふわふわした魔法使い。星の帽子は、生まれたときから頭にのっていて、一度も脱いだことがない。こだわりは魔法の渦巻きで、毎日同じ形を完璧に出すまで練習している。普段は塔のてっぺんで星を観察し、流れ星に願いごとを聞いてあげている。ところが一度も願いがかなったことがなく、いまでは「どこに届けてるんだろう」と、毎晩、首をかしげている。'},
+ {id:'samurai',img:'samurai',lv:3,name:'ドラゴンざむらい',type:'ドラゴン',size:5,elem:'none',hp:140,mp:30,str:44,hard:36,int:14,spi:28,spd:40,lck:34,bonus:{atk:6,def:4},
+  skills:[S('いあいぎり','attack',20,7),S('さくらふぶき','magic',14,8,'wind'),S('ざんしんのかまえ','buff',10,6)],items:{gen:'herb',spc:'charm'},treasure:'さくらの刀つば',
+  story:'龍の血を引く侍で、国一番の剣の使い手と呼ばれる。背中の旗には「刀」の一文字、これは亡き師匠から譲り受けたもの。こだわりは一太刀で決めることで、素振りは毎朝千回、一度も数を間違えたことがない。普段は桜の木の下で茶をすすり、花びらが落ちるのを眺めるのが日課。しかし、茶菓子の団子を見ると、剣の腕前がうそのように落ちる。団子のために弟子入りした弟子がいるという噂は、本当らしい。'},
+ {id:'shinpu',img:'shinpu',lv:3,name:'ふくよか神父',type:'人型',size:5,elem:'heal',hp:120,mp:70,str:18,hard:24,int:36,spi:44,spd:22,lck:38,bonus:{matk:4,mdef:4},
+  skills:[S('しゅくふくのいのり','heal',16,8),S('ありがたいお説教','status',0,10,'none',{st:'sleep'}),S('せいなるひかり','magic',16,8,'heal')],items:{gen:'herb',spc:'elixir'},treasure:'あおい数珠',
+  story:'竜の翼としっぽを持つ、ちょっと変わった神父。村の人たちからは愛されているが、自分では「翼のせいで説教が長引く」と気にしている。こだわりはお説教で、聞いた人を必ず笑顔にして帰す。普段は数珠をまわしながら、迷える子羊たちの悩みを聞いている。ただ、説教の最中によく居眠りをして、鼻ちょうちんで村人に笑われる。夜は静かに、みんなの幸せを祈りながら、ろうそくの灯りを見つめている。'},
+ {id:'majo',img:'majo',lv:4,name:'ひとくせ魔女',type:'人型',size:5,elem:'poison',hp:190,mp:100,str:24,hard:30,int:60,spi:56,spd:44,lck:48,bonus:{matk:8,mdef:4},
+  skills:[S('どくぐすり','magic',22,10,'poison'),S('みずのうず','magic',20,10,'water'),S('のろいのことば','status',0,12,'none',{st:'curse'}),S('どくぐもり','field',0,12,'none',{fld:'poison'})],items:{gen:'cure',spc:'elixir'},treasure:'魔女のレシピ帳',
+  story:'森のはずれに住む、長生きの魔女。若いころは美しい薬師だったが、秘薬の研究に夢中になるうち、村人に怖がられるようになった。こだわりは薬の色で、同じ色は二度と作らない。普段は大鍋をかき混ぜ、コウモリと世間話をしている。実は誰にでも薬をあげてしまうお人よしで、お礼にもらったクッキーを、一枚ずつ大切に食べる。いつか村の子どもたちと笑って話せる日が来ることを、ひそかに夢見ている。'},
+ {id:'sou',img:'sou',lv:4,name:'おちぶれ僧侶',type:'人型',size:5,elem:'none',hp:170,mp:90,str:22,hard:30,int:46,spi:52,spd:26,lck:30,bonus:{matk:4,mdef:4},
+  skills:[S('やみのいのり','magic',20,10,'poison'),S('ちいさなすくい','heal',12,6),S('あきらめのつぶやき','status',0,10,'none',{st:'curse'}),S('とむらいのかね','status',0,10,'none',{st:'sleep'})],items:{gen:'cure',spc:'elixir'},treasure:'ひびわれた光の輪',
+  story:'かつては王国一の僧侶と呼ばれていたが、救えなかった人々の数に心が折れ、ぼろぼろになった元聖職者。頭の上の光の輪は、今にも消えそうに揺れている。こだわりは祈りの言葉で、誰にも聞かれなくても、毎晩かならず唱える。普段は廃墟の礼拝堂で、折れた十字架を直している。人を癒やせなくなった今でも、傷ついた旅人には黙ってパンを差し出す。彼が本当に救いたかったのは、自分自身だったのかもしれない。'},
+ {id:'kakutou',img:'kakutou',lv:4,name:'いなずま格闘家',type:'獣',size:5,elem:'thunder',hp:190,mp:50,str:56,hard:38,int:30,spi:34,spd:56,lck:50,bonus:{atk:4,def:2},
+  skills:[S('らいげきづき','attack',22,8,'thunder',{motion:'spin'}),S('いなずまのつめ','attack',20,7,'none',{motion:'jump'}),S('きあいぜんかい','status',0,10,'none',{st:'dope'}),S('しびれぼう','status',0,10,'none',{st:'para'})],items:{gen:'herb',spc:'charm'},treasure:'いなずまのおまもり',
+  story:'山奥の道場で、雷に打たれて生まれ変わった竜狼の格闘家。青い雷光をまとう棒は、亡き師匠が最後に残した形見だ。こだわりは型で、毎朝日の出とともに千回、同じ動きをくり返す。普段は岩の上で瞑想をし、鳥と話をしている。強者を求めて旅に出たが、道に迷って何度も同じ崖に戻ってきた。最近は、自分より強い相手に会えなくなったことが、いちばんの悩み。静かな夜は、師匠の笑い声を思い出している。'},
+ {id:'juuki',img:'juuki',lv:4,name:'ずっしり重騎士',type:'ドラゴン',size:7,elem:'rock',hp:260,mp:30,str:64,hard:62,int:12,spi:24,spd:14,lck:16,bonus:{atk:6,def:8},
+  skills:[S('ちょうおもオノ','attack',24,9,'none',{motion:'spin'}),S('どっしりかまえ','buff',12,6),S('じしんたたき','magic',18,10,'rock')],items:{gen:'cure',spc:'bomb'},treasure:'ずっしりした兜',
+  story:'千年の戦を生き抜いた、鉄の鎧の重騎士。鎧はあまりに重くて自分では脱げず、毎晩、従者に手伝ってもらっている。こだわりは盾の傷で、一つひとつに戦いの思い出がある。普段は城の門前に立ち、通る人にゆっくり頭を下げる。動きは遅いが、一度守ると決めた者は、決して見捨てない。若い従者が病で倒れた夜、鎧のまま看病して、朝まで眠らなかった。その背中を、誰も笑う者はいない。'},
+ {id:'madushi',img:'madushi',lv:4,name:'くるったウシ',type:'獣',size:7,elem:'none',hp:240,mp:20,str:70,hard:42,int:8,spi:14,spd:46,lck:20,bonus:{atk:4},
+  skills:[S('ぼうそうとっしん','attack',24,8),S('ふみつぶし','attack',20,6,'none',{motion:'jump'}),S('くるいのさけび','status',0,10,'none',{st:'rage'})],items:{gen:'herb',spc:'bomb'},treasure:'ちぎれた鎖',
+  story:'牧場で毎日重い荷を引いていた牛が、ある日、鎖を引きちぎって暴れだした姿。目が黄色く光るのは、怒りがたまりすぎたせいだ。こだわりは突進の角度で、まっすぐ走ることだけは誰にも負けない。普段は草原で草を食べているが、赤いものを見ると、条件反射で走り出す。実は怒りの原因は、大切にしていた友の牛が売られてしまったこと。今でも夜は、遠くの牛舎の鐘の音を、じっと聞いている。'},
+ {id:'ankoku',img:'ankoku',lv:5,name:'あんこく騎士',type:'人型',size:6,elem:'none',hp:330,mp:100,str:85,hard:66,int:70,spi:62,spd:56,lck:46,bonus:{atk:8,def:8,matk:4},
+  skills:[S('あんこくのけん','attack',28,10,'none',{motion:'spin'}),S('やみのほのお','magic',26,14,'fire'),S('のろいのかげ','status',0,12,'none',{st:'curse'}),S('くらやみのまく','field',0,14,'none',{fld:'dark'})],items:{gen:'water',spc:'bomb'},treasure:'しれつな頭蓋骨の飾り',
+  story:'かつては王国に仕える立派な騎士だったが、魔王の力に魅入られ、闇の鎧をまとった暗黒騎士。胸の紫の光は、失った仲間の魂が宿っているらしい。こだわりは盾の月の紋章で、毎晩、闇夜に磨いている。普段は城の地下で一人、剣の手入れをしながら、昔の訓練場の歌を口ずさむ。強い敵を前にすると、心のどこかが痛む。倒されるたびに、兜の下でわずかに微笑んでいるのは、誰も知らない。'},
+ {id:'gyudon',img:'gyudon',lv:5,name:'牛ドンの戦士',type:'獣',size:8,elem:'heal',hp:360,mp:60,str:92,hard:64,int:20,spi:40,spd:40,lck:36,bonus:{atk:8,def:6},
+  skills:[S('ぎゅうどんオノ','attack',30,12,'none',{motion:'spin'}),S('いっちょうあがり','attack',26,10,'none',{motion:'jump'}),S('つゆだくパワー','status',0,12,'none',{st:'dope'}),S('たまごのいやし','heal',14,10)],items:{gen:'herb',spc:'elixir'},treasure:'あつあつの牛丼',
+  story:'どんぶりを愛しすぎたあまり、ついにどんぶりを帯に付けて戦うようになった牛の戦士。巨大な斧の刃には、牛丼の紋章が刻まれている。こだわりはつゆだくの加減で、一滴もこぼさず戦うのが誇り。普段は屋台を引いて旅をし、仲間に牛丼をふるまう。強面だが涙もろく、客が「おいしい」と言うたびに、鼻を鳴らして泣く。倒されるときは、必ず最後に「おかわり…」と、小さくつぶやく。'},
+ {id:'tora',img:'tora',lv:5,name:'トラの戦士',type:'獣',size:6,elem:'none',hp:340,mp:80,str:90,hard:60,int:40,spi:48,spd:62,lck:50,bonus:{atk:6,def:6},
+  skills:[S('おおなたスイング','attack',28,10,'none',{motion:'spin'}),S('かみつきダッシュ','attack',26,9,'none',{motion:'jump'}),S('とらのおたけび','status',0,12,'none',{st:'dope'}),S('ひかりのたて','buff',12,8)],items:{gen:'cure',spc:'charm'},treasure:'ひかるとらのキバ',
+  story:'光る紋章の斧を持つ、森の守り神のようなトラの戦士。鎧のルーンは、森の精霊たちが毎晩、一つずつ刻んでくれたもの。こだわりは尻尾の輝きで、毎日つやを確かめながら森を巡る。普段は穏やかで、迷子のうさぎを背に乗せて送り届けている。ところが、森を荒らす者には容赦しない。戦いが終われば、傷ついた相手にも、そっと薬草を置いていく。「強さは守るためにある」と、斧の柄に彫ってある。'}
+];
+/* 追加モンスター(60体): コンパクトな記述を展開 */
+const KD={a:'attack',m:'magic',h:'heal',b:'buff',s:'status',f:'field',d:'debuff'},BK={a:'atk',d:'def',m:'matk',e:'mdef'};
+const NEWMON=[["kawadora", 1, "ちびドラゴン", "ドラゴン", 3, "none", 80, 25, 20, 18, 22, 20, 28, 36, "", "ぱたぱたたいあたり:a:10:4/ちいさなほのお:m:12:6:fire/ごきげんのうた:h:8:6", "herb/charm", "ちいさな竜のツノ", "ドラゴンの卵のなかで一番ちいさかったので、みんなに忘れられて、ひとりでころんと生まれたちびドラゴン。こだわりは火の息の形で、ハート型に出すのが夢だが、いつも丸いけむりになる。普段は山のふもとで、お母さんの背中に追いつこうと、ぱたぱた羽を動かしている。飛べるのはほんの三十センチ。それでも毎日、空に向かって「いってきます」と言うと、夜には必ず、お母さんの待つ洞窟に帰る。"], ["kumachan", 1, "はなくまちゃん", "獣", 3, "heal", 85, 25, 22, 20, 12, 26, 20, 32, "", "ぎゅっとだっこ:a:10:4:heal/おはなのいやし:h:10:6/ちからこぶ:b:8:5", "herb/elixir", "青いおはな", "森の小道で、道に迷った旅人から青いお花をもらった日から、お花のとりこになった子グマ。首の鈴は、迷子にならないよう、母グマがつけてくれたお守り。こだわりはお花の香りで、毎日ちがう花をつんではくんくんする。普段はカバンに花びらを集めている。ときどき蜂に追いかけられて泣くが、すぐ笑顔に戻る。鈴が鳴るたび、遠くの母が「こっちよ」と呼んでくれる気がして、安心するのだ。"], ["tsukamare", 1, "とらわれのおひめさま", "スライム", 2, "heal", 70, 30, 8, 10, 24, 28, 14, 40, "", "すがるカギこうげき:a:8:3/なきおとし:s:0:6::sleep/ひっしのいのり:h:10:6", "herb/elixir", "さびた小さなカギ", "お城のてっぺんに閉じこめられた、泣き虫のモンスター姫。縄でしばられているのに、手に鍵を握っているのはなぜか、本人にも分からない。こだわりはリボンで、毎朝ほどけないよう結び直している。普段は助けを待ちながら、ねずみの友だちとおしゃべりをしている。実は鍵で自分から出られるのに、「誰かが来てくれるまで待ちたい」と言って、今日もそっと涙を拭いている。"], ["yousei", 1, "ふわふわ妖精", "妖精", 1, "wind", 60, 45, 8, 8, 30, 28, 52, 48, "m3", "きらきらのまほう:m:12:6/しずくのたま:m:12:6:water/ひかりのかふん:s:0:8::sleep", "water/elixir", "しずくの宝玉", "朝つゆのしずくに、お日さまの光がさした瞬間に生まれた小さな妖精。手のなかの水の玉は、生まれて最初に見つけたたからもの。こだわりはお花のおしゃれで、毎日ちがう花を髪に飾る。普段は草むらで虫たちとおしゃべりし、迷子のてんとう虫を家に送り届けている。ところが方向音痴なので、毎回、自分が迷子になる。夜は蛍の光を道しるべに、半べそで草の家に帰っている。"], ["obake", 1, "ちびおばけ", "幽霊", 2, "none", 60, 40, 12, 6, 24, 30, 34, 44, "", "ひょろひょろ:a:8:3/おどろかし:s:0:7::para/すりぬけ:b:8:5", "herb/charm", "ひとだま入りのびん", "夜の古い井戸のそばで、さみしい気持ちがふわっと集まって生まれた小さなおばけ。角がちょこんと生えているのは、強そうに見せたくて、背のびをしたせい。こだわりはおどかし方で、毎晩、鏡の前で「うらめしやー」を練習する。でも声が小さすぎて、誰も気づいてくれない。それでも、通りかかった子どもが笑ってくれたとき、夜じゅう、ふわふわ空を飛んで喜んでいた。"], ["tonbo", 1, "にじいろトンボ", "虫", 2, "wind", 65, 25, 20, 10, 22, 18, 56, 40, "", "つばさのかぜ:m:12:6:wind/すいっと:a:12:4::jump/ひらひら:b:8:5", "herb/charm", "にじ色の羽根", "夏の池のほとりで、虹をまとって生まれた小さなトンボ。羽のもようは、雨あがりの空をそのまま写したもの。こだわりは羽の音で、毎朝、いちばん澄んだ音が出るまで、羽ばたきの練習をしている。普段は花の枝にとまり、通りかかる虫たちに池の天気を教えている。ところが雷が鳴ると、枝にしがみついて動けなくなる。それでも虹が出ると、真っ先に飛び出し、みんなを呼びに行くのだ。"], ["doro", 1, "どろんこくん", "泥人間", 3, "soft", 90, 15, 20, 14, 8, 14, 12, 20, "", "どろはね:a:10:4/もがく:a:12:5::spin/どろまみれ:s:0:7::curse", "herb/elixir", "どろだらけの靴", "山あいの泥沼で、足をすべらせてから三年、まだ抜け出せない旅人。いつのまにか全身が泥になり、自分が人間だったことを時々忘れそうになる。こだわりは助けを呼ぶ声で、「たすけてー」の言い方を毎日工夫している。普段は通りかかる鳥に手を振り、たまに泥団子をプレゼントする。それでも、誰かが手を伸ばしてくれる日を信じて、今日も泥のなかで、にっこり笑おうと頑張っている。"], ["goblin", 1, "こわもてゴブリン", "人型", 3, "none", 85, 20, 30, 18, 14, 14, 36, 34, "a3", "ひとふりアックス:a:14:5/どくびん:s:0:7::poison/こうげきのかまえ:b:8:5", "molotov/charm", "薬びんのかけら", "洞窟の入り口で、長い年月をかけて盗賊に鍛えられたゴブリン。傷だらけの顔は、数えきれないほどの喧嘩の勲章。こだわりは道具の手入れで、斧は毎朝、必ずピカピカに磨く。普段は薬びんを集めては、新しい毒を作る実験をしている。ところが毎回、自分で味見をしてお腹をこわす。それでも夜は、仲間の分のスープを作り、にやりと笑って「食え」と、ぶっきらぼうに差し出す。"], ["cyclopskun", 1, "ひとつめくん", "巨人", 5, "none", 90, 15, 28, 22, 8, 14, 20, 24, "a2,d2", "いしづちパンチ:a:12:4/たてでガード:b:8:5/にっこりビーム:m:10:5", "herb/elixir", "ちいさな石づち", "山のふもとの小さな村で、一つ目のせいで友だちができなかった子どものサイクロプス。毎日、大きな目で星を眺め、「いつか友だちができますように」とお願いしていた。こだわりは石づち作りで、毎朝すこしずつ形を変えている。普段は村の畑を手伝い、重い荷物を運んでいる。最近ようやく、村の子どもたちが「一緒に遊ぼう」と声をかけてくれた。その日、彼は一晩じゅう、にこにこしていた。"], ["tenshi", 1, "ちびてんし", "天使", 2, "heal", 80, 40, 22, 16, 24, 30, 34, 38, "a2,d2", "けんでチョップ:a:12:4/ひかりのまもり:b:8:5/いのりのひかり:h:10:6", "herb/charm", "ちいさな光の羽", "雲の上の学校で、いつも落ちこぼれだった小さな天使。空は飛べるけれど、すぐ疲れてしまい、地面に降りてしまう。こだわりは盾の太陽のもようで、毎日ていねいに磨いている。普段は人間の街に降りて、迷子の子どもを助けている。強そうに見せるために、いつもむすっとした顔をしているが、笑いかけられると、真っ赤になって羽をばたばたさせる。夜は星空に向かって、「明日もがんばる」と祈っている。"], ["tsuchi", 1, "もぐらの精霊", "獣", 3, "rock", 100, 25, 20, 26, 16, 20, 14, 22, "", "つめでほる:a:10:4/こけのいやし:h:10:6/つちのかべ:b:10:5", "herb/elixir", "もりの結晶", "森の奥の土のなかで、緑の結晶といっしょに生まれた、もぐらのような精霊。背中の苔と結晶は、土の力が宿ったしるし。こだわりはふかふかの土で、毎日同じ場所を掘り返して、ちょうどよい固さを探している。普段は森の木々の根を掃除して、お礼にどんぐりをもらう。のんびり屋なので、敵が来ても気づかず、眠っていることもある。それでも夢の中では、立派な森の守り神になっている。"], ["oni", 2, "ちからもち小鬼", "鬼", 5, "none", 110, 15, 34, 26, 8, 16, 22, 20, "a4", "こんぼうフルスイング:a:16:6::spin/ちからのかけごえ:s:0:6::dope/ふみこみ:a:14:5", "herb/bomb", "ちからの文字の腕輪", "山の鬼の村に生まれた、小さな鬼のちからもち。腕に書かれた「力」の文字は、母さんが生まれた日に書いてくれたお守り。こだわりは棍棒の重さで、毎日少しずつ重くして鍛えている。普段は村のお祭りでお餅をついて、子どもたちに配っている。見た目は強そうだが、実は蜂が大の苦手。蜂が来ると、「ひえー」と叫んで、棍棒を放り出して逃げていく。でも、そのあと必ず恥ずかしそうに戻ってくる。"], ["macho", 2, "のんきマッチョ", "人型", 5, "none", 105, 15, 36, 28, 8, 14, 26, 30, "a3", "きんにくパンチ:a:16:6/ポーズをきめる:b:10:6/おのなげ:a:14:5::jump", "herb/charm", "ほりだしのおの", "町いちばんの筋肉自慢だが、気持ちはとっても優しい、のんきなマッチョ。ベルトの小びんには、お母さんが作ってくれた薬草茶が入っている。こだわりは筋肉のポーズで、毎朝、鏡の前で百通りのポーズを練習している。普段は荷物を運んだり、迷子の子どもを肩車したりして町の人気者。ただし、本当は高いところが苦手で、肩車の最中はずっと目をつぶっている。それでも、子どもの笑い声が聞こえると、にこっと笑う。"], ["shoukan", 2, "ゴーストつかいリス", "獣", 2, "none", 80, 70, 10, 14, 34, 34, 32, 40, "m3", "ゴーストしょうかん:m:14:8/ほしのうず:m:14:8:ice/やさしいまじない:h:10:7", "water/elixir", "ふしぎな魔導書", "古い魔法の森で、小さなゴーストを呼び出したのが縁で、魔法使いになったリスの召喚士。ローブの継ぎはぎは、見習いのころから、ずっと着ているもの。こだわりは魔導書の整理で、本の背を色ごとに並べて満足する。普段は召喚したゴーストと一緒におやつを食べているが、ゴーストが食べたものは、なぜか全部すり抜けてしまう。それでも二人は、毎日、仲良く笑い合っている。"], ["ninja", 2, "タヌキにんじゃ", "獣", 2, "none", 80, 25, 30, 16, 16, 20, 60, 52, "", "くないなげ:a:12:4::jump/すずのねいろ:s:0:8::sleep/かげぬい:a:14:5::spin", "herb/charm", "くろい手ぬぐい", "月夜の森で、迷い込んだ忍者から手ぬぐいをもらったのが始まりの、タヌキの忍者。尻尾が大きすぎて、隠れてもいつも、はみ出している。こだわりは鈴の音を消すことで、毎晩、歩き方を練習している。普段は黒い忍装束で町をこっそり見回り、困っている人を助けている。ただし、屋根の上で眠ってしまい、朝に見つかることもある。「拙者は忍びゆえ」と言いつつ、お団子には、つい声が大きくなる。"], ["fseirei", 2, "ほのおのこぞう", "精霊", 2, "fire", 80, 40, 22, 12, 28, 24, 42, 36, "", "ひのこ:m:12:5:fire/ほのおダッシュ:a:12:4:fire:jump/あたたかい光:h:8:6", "molotov/elixir", "ちいさな炎の石", "焚き火の炎が風でゆらめいた瞬間、ぽんと生まれた小さな火の精霊。首の飾りは、生まれたときから持っていた炎の石。こだわりはぱちぱちの音で、一番心地よい音を出せるよう、毎晩練習している。普段は焚き火の中で眠り、旅人が来ると、少しだけ炎を大きくして温めている。水は大の苦手で、雨の日は穴の中でふるえている。それでも夜になると、にこにこ笑って、また火をともしている。"], ["hachi", 2, "どくバチ", "虫", 2, "poison", 70, 20, 30, 12, 12, 14, 54, 38, "", "どくばり:a:14:5:poison:jump/どくのしずく:s:0:6::poison/ぶんぶんかくらん:b:8:5", "cure/charm", "とろとろ蜂蜜", "花畑で毒の蜜を吸ったミツバチが、ある朝、びりびりと緑色に光って生まれ変わった姿。しっぽの毒は、本人もまだうまく操れず、時々自分の足にたれて、慌てて拭いている。こだわりははちみつ作りで、毒入りだけど、味は世界一と自慢している。普段は女王蜂に叱られながら、花粉を運んでいる。毒の蜂蜜を舐めた人が、なぜか元気になる不思議な効果があるのは、まだ内緒にしている。"], ["kamakiri", 2, "みならいかまきり", "虫", 3, "none", 85, 20, 36, 18, 12, 16, 50, 34, "a2", "かまきりぎり:a:16:6::spin/かくれみのじゅつ:b:10:6/ちいさな斬撃:a:12:4", "herb/elixir", "くさの腕輪", "草むらで生まれたばかりのころ、バッタに「ひょろひょろ」とからかわれ、悔しくて鎌の稽古を始めたカマキリ。肩の革あては、拾った革の切れ端で自分で作った。こだわりは構えの美しさで、毎朝同じ角度を繰り返し練習する。普段は枝の先で静かに空を眺め、虫たちの見張りをしている。強がっているが、雨が降ると巣にこもって震える。それでも、迷子のてんとう虫を見つけると、必ず助けに行く。"], ["dokusho", 2, "どくしょオーク", "人型", 6, "none", 105, 60, 16, 24, 36, 34, 14, 28, "m3", "まほうのほん:m:16:8/ぱらぱらかぜ:m:14:7:wind/ほんでいちげき:a:12:4", "water/elixir", "ふしぎな栞", "森はずれの静かな書斎で、毎日本ばかり読んでいる、心やさしいオーク。魔法の本が光るたび、胸がわくわくして、つい一日じゅう読みふけってしまう。こだわりは本の匂いで、新しい本は必ず、一度ぎゅっと抱きしめてから読む。普段は畑仕事のあと、緑の椅子で本を開くのが日課。強そうと言われるのが悩みだが、戦いより、お茶を飲みながら語り合う時間のほうが、ずっと好きなのだ。"], ["stone2", 2, "コケむしゴーレム", "ゴーレム", 7, "rock", 120, 10, 30, 40, 8, 14, 10, 12, "d4", "いしのこぶし:a:14:5/こけのいやし:h:10:6/どっしり:b:10:6", "herb/elixir", "あたたかい苔玉", "山の上の古い祠で、苔にむされながら長い年月、旅人を見守ってきた石の人形。頭に生えた小さな苔は、鳥たちが運んできた種から育ったもの。こだわりは苔の手入れで、毎朝、水滴で少しずつ潤している。普段は動かず、鳥の巣を肩にのせて、ゆったり時間を過ごしている。話せないけれど、旅人に微笑まれると、ちょっとだけ石のほっぺが、ゆるむ気がする。そんな日は、苔がいつもより、青々としている。"], ["vamboy", 2, "ちびバンパイア", "人型", 3, "none", 90, 40, 26, 16, 28, 26, 48, 44, "a2", "おのでスイング:a:14:5/コウモリのうた:s:0:8::sleep/ちいさなのろい:s:0:8::curse", "herb/charm", "こうもりのピアス", "夜の森の洞窟で、こうもりの家族に育てられた、小さな吸血鬼の少年。斧は、おじいさんが残してくれた形見で、本当は薪割り用。こだわりはマントの着こなしで、毎晩、お気に入りのこうもり模様を整える。普段は夜のお散歩をして、人間の子どもと内緒で遊んでいる。ただし、トマトジュースしか飲めず、血は見るのも苦手。でも、「かっこいい吸血鬼になる」という夢だけは、ずっと諦めていない。"], ["elf", 2, "あおぞらエルフ", "人型", 4, "wind", 85, 70, 14, 14, 36, 38, 46, 44, "m3", "かぜのたま:m:14:7:wind/しんりょくのいやし:h:12:7/みどりのまとい:f:0:10::grass", "water/elixir", "ぎんの髪かざり", "青空の下の森で、風と一緒に歌いながら暮らす、あおぞらエルフ。杖の先の玉は、森の奥の泉から授かった宝物。こだわりは髪の編み方で、毎朝ちがう形にして、風に見せている。普段は迷子の動物を助け、森の木々に声をかけて歩く。ただし、虫が大の苦手で、小さな蜘蛛を見ると、飛び上がって木に登る。それでも夜は、星の下で歌を歌い、森じゅうの命を、やさしく眠らせている。"], ["mizu", 2, "ぷかぷか亀精霊", "精霊", 4, "water", 115, 45, 18, 30, 28, 34, 14, 28, "", "みずでっぽう:m:14:7:water/あわのいやし:h:10:6/しずくのうず:f:0:10::water", "water/elixir", "しずくの貝がら", "森の奥の透きとおった泉で、水の泡から生まれた、のんびり屋の亀の精霊。甲羅のうずまきは、川の流れを覚えたもの。こだわりは水の透明度で、毎日、泉をきれいに磨いている。普段は水面にぷかぷか浮かび、通りかかる魚たちと日向ぼっこをしている。動きはとても遅く、敵が近づいても気づかないこともある。それでも甲羅の泡がぽんと弾けるたび、遠くの森が、すこしだけ潤うのだ。"], ["jigoku", 3, "じごくの赤鬼", "鬼", 6, "fire", 160, 30, 44, 36, 12, 24, 26, 22, "a6,d4", "てつのかなぼう:a:20:7::spin/じごくのさけび:s:0:8::rage/ふみつけ:a:18:6::jump", "cure/bomb", "さびた金棒のかけら", "地獄の門番として何百年も働いてきた、赤い肌の鬼。金棒は、昔の悪人が積み重ねた罪のぶんだけ重くなる不思議な武器。こだわりは掃除で、地獄の庭の灰を毎朝、必ず掃き清めている。普段は無口だが、地獄に来る人々の話を静かに聞くのが好き。ときどき、善い行いをした人を、こっそり天国の門まで案内して、帰りに赤面している。「鬼にも涙」という言葉を、本人はまだ知らない。"], ["wyvern", 3, "ひこうワイバーン", "ドラゴン", 6, "wind", 140, 30, 42, 26, 20, 22, 60, 36, "d2", "きゅうこうかダイブ:a:20:7::jump/かぜのはばたき:m:16:8:wind/つむじかぜ:f:0:12::wind", "herb/charm", "あおい飛膜", "高い山の崖の上で、強い風に鍛えられて育った、ひこうワイバーン。翼の青い膜は、空の色を吸いこんで、日ごとに濃くなる。こだわりは急降下の角度で、毎日一度は、風と競争している。普段は雲の上で昼寝をして、迷子の鳥を巣まで送っている。ただし、着陸だけはいつも下手で、毎回、木をなぎ倒してしまう。それでも倒した木には、必ず、苗を植えてから帰っている。"], ["higuma", 3, "やまのひぐま", "獣", 7, "none", 170, 10, 46, 34, 6, 14, 30, 22, "a4", "ひきさく:a:20:6/のしかかり:a:18:6::jump/いかりのほえる:s:0:6::rage", "herb/bomb", "ふとい爪のかけら", "冬の山で、鮭を追いかけているうちに、ひとまわり大きくなったひぐま。毛の緑がかった色は、森の苔と同化した証。こだわりは鮭の獲り方で、毎年、新しい技を編み出している。普段は川辺でのんびりと歩き、子鹿の遊び相手になっている。怒るととても強いが、子どもの泣き声が聞こえると、慌てて駆けつけて、そっと蜂蜜を差し出す。その大きな背中は、森じゅうの子どもたちの隠れ場所でもある。"], ["jiisan", 3, "ろうしょう馬乗り騎士", "人型", 6, "none", 150, 40, 34, 40, 24, 30, 30, 40, "a3,d5", "やりでとっしん:a:20:7::jump/ふるいちゅうせい:b:12:6/おとぎばなし:s:0:8::sleep", "herb/elixir", "ことりの羽根かざり", "若いころは国いちばんの槍使いと呼ばれた、白ひげの老騎士。頭の小鳥は、旅の途中で出会った相棒で、なぜか兜のてっぺんから離れない。こだわりは馬の手入れで、毎朝、ブラシで一時間かける。普段は故郷の丘で孫に昔話を語り、よく途中で居眠りしてしまう。それでも、危険が迫ると、誰よりも早く馬に飛び乗る。「まだまだ現役じゃ」と笑う顔が、いちばんかっこいい。"], ["ushiou", 3, "ふくよか牛王", "獣", 5, "heal", 130, 60, 24, 30, 34, 36, 20, 36, "m3", "おうのしゃくじょう:a:14:5/きらきら巻物:m:16:8/おうさまの号令:s:0:8::dope", "water/elixir", "すいしょうの王冠", "牛の国で、突然王様に選ばれた、のんびり屋の牛の王様。キラキラの冠は、重くて、頭がときどき後ろに傾く。こだわりは巻物の整理で、毎晩、夜通しラベルを書きかえている。普段は牧場の草の上で、国民たちと昼寝をしている。ただし、「おうさま!」と呼ばれると、緊張して、うっかり杖を落としてしまう。それでも国民みんなに愛されており、毎朝、誰かがクッキーを差し入れてくれるのだ。"], ["ougonkama", 3, "おかねもちカマキリ", "虫", 3, "none", 120, 40, 34, 24, 26, 26, 54, 70, "", "こばんなげ:a:16:6::jump/きんのかがやき:b:12:6/おかねのかおり:s:0:8::sleep", "herb/charm", "ぴかぴかの金貨", "宝物の山のそばで生まれて、金貨にかこまれて育った、黄金のかまきり。羽に描かれた金貨は、拾ったコインを一枚ずつ貼ったもの。こだわりは金貨の数え方で、毎晩、必ず最初から数え直している。普段は金貨を磨きながら、通りがかりの虫に、気前よく配っている。ただし、数え間違えると、朝までやり直す。実は誰より優しく、お金より、「ありがとう」の言葉のほうが、ずっと好きなのだ。"], ["jyu", 3, "みどりたてがみの獣", "獣", 6, "none", 150, 50, 40, 30, 32, 30, 44, 38, "d3", "つめのひとかき:a:18:6/こもれびのいぶき:m:16:8/もりのいやし:h:12:8", "herb/elixir", "もりの宝石", "森の奥の泉で、緑のたてがみと結晶に包まれて生まれた、森のけもの。体の苔と鱗は、年月とともに、少しずつ増えてきた。こだわりはたてがみの手入れで、朝露で毎日洗っている。普段は静かに森を見守り、傷ついた動物をたてがみで包んで温めている。ところが、風が強い日は、たてがみがぼさぼさになって、泉に映る自分を見て、がっかりしている。それでも、仲間はみんなその姿が、大好きだ。"], ["kage", 3, "かげのけもの", "幽霊", 4, "none", 120, 60, 38, 14, 40, 36, 58, 50, "", "かげのつめ:a:18:6::spin/やみのたまり:f:0:12::dark/ほほえみののろい:s:0:8::curse", "cure/charm", "かげの切れはし", "夜の森の影が、月の光にあたって、ふっと立ち上がって生まれた、影のけもの。黄色く光る目は、星を飲みこんだ名残。こだわりは足音の消し方で、一度も砂を鳴らしたことがない。普段は木の影に隠れて、人間の暮らしをそっと眺めている。さみしがり屋で、誰かの影に寄りそって眠る癖がある。朝になるとあわてて逃げるが、実は、その人の影を少しだけ、守っているのだ。"], ["iron2", 3, "さびさびゴーレム", "ゴーレム", 7, "none", 160, 20, 40, 52, 10, 16, 10, 10, "a4,d6", "てつのオノ:a:20:7/ルーンのひかり:b:12:6/ぎしぎしおたけび:s:0:6::curse", "cure/elixir", "ルーンの刃", "雨に打たれ、さびだらけになった古い鉄のゴーレム。胸のルーンは、むかし作ってくれた職人の名前を表している。こだわりは草の手入れで、足元の草を踏まないよう、そっと歩いている。普段は岩の上でじっと立ち、小鳥たちの止まり木になっている。動くたびにぎしぎし鳴るので、いつも恥ずかしそうにしているが、雨の日は、ぽたぽた落ちる雫の音を聞くのが、いちばんの幸せだ。"], ["ika", 3, "おこりんぼイカ", "魚介", 8, "water", 160, 40, 42, 28, 24, 24, 36, 24, "a2", "しゅしゅしゅ:a:18:6::spin/みどりのすみ:s:0:8::poison/うずしお:m:16:8:water", "herb/bomb", "くろいすみつぼ", "深い海の底で、沈んだ船の怒りと悲しみを吸いこんで生まれた、巨大なイカ。黄色い目の輝きは、沈んだ船の灯りの名残。こだわりは墨の濃さで、毎日少しずつ調合を変えている。普段は暗い海で、迷い込んだ魚たちを、そっと見守っている。怒りっぽいと恐れられているが、実は船乗りの歌が大好き。船から歌が聞こえると、波間に浮かび上がって、そっと、聴き入っているのだ。"], ["vamgirl", 3, "きどりバンパイア", "人型", 4, "none", 120, 60, 30, 22, 34, 32, 56, 48, "a3", "レイピアつき:a:18:6::jump/あいのささやき:s:0:9::sleep/こうもりのまい:b:10:6", "herb/charm", "あかい宝石のロケット", "古い屋敷で、お姫様のように育てられた吸血鬼の少女。剣は、亡き父が教えてくれた、最初の贈り物。こだわりは赤い服の着こなしで、毎朝、鏡の前で三十分悩む。普段は屋敷の庭でこうもりたちとお茶会を開いている。血は苦手で、トマトジュースが好物。強がって「わたくしは吸血鬼よ」と言うが、雷が鳴ると、こうもりに抱きついて、小さく震えてしまう。それでも、また胸を張って、微笑むのだ。"], ["dwarf", 3, "ひげもじゃドワーフ", "人型", 3, "rock", 140, 20, 42, 44, 14, 24, 20, 28, "a4,d4", "おのでガツン:a:20:7/ひげのまもり:b:12:6/いわくだき:m:16:8:rock", "cure/bomb", "ひげかざり", "山の中の鉱山で、石を掘りながら生まれた、ひげもじゃのドワーフ。三つ編みのひげは、結び目ひとつひとつに、仲間との思い出が込められている。こだわりは斧の刃で、毎晩、砥石で一時間かけて磨く。普段は鉱山で宝石を探して、見つけると、子どもたちにお土産にしている。見た目は怖いが、実は甘いお菓子が大好き。ポケットには、いつも飴玉が、こっそり、入っている。"], ["bluedr", 4, "ブルーなりゅう", "ドラゴン", 9, "water", 240, 70, 56, 52, 52, 46, 40, 30, "d6", "みずのブレス:m:24:12:water/つめのいちげき:a:22:8::spin/ぬれるきり:f:0:12::fog/しおのよろい:b:12:8", "water/bomb", "青いウロコ", "深い青の湖の底で、百年に一度だけ生まれると言われる、青い竜。うろこは、湖の水を何層も重ねて、少しずつ硬くなった。こだわりは水面の波紋で、毎晩、一滴ずつ水を落として形を確かめる。普段は湖の底で眠り、嵐の夜だけ、水面に顔を出す。孤独な暮らしだが、湖に迷い込んだ子どもを見つけると、そっと背中に乗せて、岸まで運ぶ。その優しさを、村の誰も知らない。"], ["reddr", 4, "あかいほのおの竜", "ドラゴン", 9, "fire", 250, 60, 62, 50, 48, 40, 38, 28, "a4,d4", "ほのおのいき:m:26:14:fire/きりさくつめ:a:22:8::jump/ようがんのだいち:f:0:12::fire/ほえる:s:0:8::rage", "molotov/bomb", "ほのおのウロコ", "燃えるような赤い鱗を持つ、火山のふもとの古い竜。若いころは、街の灯りを消す悪い竜と恐れられたが、実は、灯りが大好きで、じっと眺めていただけ。こだわりは口から出す炎の色で、毎日、夕焼けの色を目標にしている。普段は洞窟で昼寝をして、夜になると街の灯りを遠くから眺めている。その姿を見た旅人は、毎年、ひとつだけ、ろうそくを置いていく。"], ["greendr", 4, "みどりの古竜", "ドラゴン", 9, "poison", 260, 70, 60, 56, 48, 44, 34, 26, "a4,d6", "どくのいき:m:24:12:poison/しっぽのひとふり:a:22:8::spin/どくのもや:f:0:12::poison/ふるいおどし:s:0:8::curse", "cure/elixir", "むかしのこけの玉", "何千年も森の奥で眠り続けた、苔むした緑の古竜。体の鱗は、木の皮とほとんど変わらず、鳥たちが巣を作るほど。こだわりは眠りの深さで、百年に一度、ひとつだけ、あくびをする。普段は動かず、森の生き物たちに背中を貸している。長い時間のなか、いろんな別れを見てきた。だから、いまは誰かが森に来るたび、そっと目を開けて、静かに、微笑むのだ。"], ["hime", 4, "ぷんぷんひめ", "人型", 3, "none", 170, 80, 40, 26, 54, 46, 50, 40, "m4", "とげのつえ:a:20:7::spin/こわれたハート:m:22:12:poison/いかりのさけび:s:0:8::rage/ひめのかんしゃく:s:0:10::curse", "water/charm", "われたハートの石", "かつては優しいお姫様だったが、大切なものを壊されて、心が割れてしまった少女。ハートの杖は、割れた心のかけらで作った。こだわりはリボンの結び目で、傷んだ布をつなぎ合わせて、毎日お洋服を作り直している。普段は怒った顔をしているが、お友だちの悲しい声が聞こえると、そっと、手を差し伸べてしまう。本当は、誰かに「ありがとう」と言ってもらいたいだけなのだ。"], ["ninja2", 4, "つきよのくノ一", "人型", 5, "none", 190, 60, 56, 34, 36, 38, 70, 56, "a4", "かまいたち:a:22:8::spin/しのびのかげ:f:0:12::dark/かげぬい:s:0:8::para/まきびし:a:18:6::jump", "cure/charm", "ナイトシェイドの鎌", "月夜の森で、一族の掟に縛られた、角を持つ孤高の忍者。大きな鎌は、亡き師匠から受け継いだもので、刃には「夜の毒草」と刻まれている。こだわりは気配の消し方で、獲物の一歩前で、風と同化する。普段は崖の上で、月を見ながら、笛を吹く。誰にも知られない夜、森の迷子を、そっと家に送り届けている。朝になると、すっと姿を消すのだ。"], ["cyclops", 4, "いわはだサイクロプス", "巨人", 8, "rock", 250, 20, 62, 52, 10, 20, 22, 20, "a6,d4", "いしづちふりおろし:a:24:9::spin/どすどすふみ:a:20:7::jump/うおーっ:s:0:8::rage", "herb/bomb", "ひとつ目の飾り玉", "山のてっぺんで岩を砕きながら育った、苔むしたサイクロプス。肩の岩と苔は、長年の戦いで、体と一体化してしまった。こだわりは石づちの重さで、毎日少しずつ、重くしている。普段は洞窟で、鳥の巣を肩にのせて、のんびり過ごしている。見た目が怖くて、人間からは敬遠されるが、実は、小さな花を踏まないよう、毎朝、足元をじっと確かめてから、歩いている。"], ["kyojin", 4, "こんぼう大巨人", "巨人", 9, "none", 270, 20, 70, 48, 8, 18, 24, 18, "a6", "こんぼうたたき:a:26:9::spin/じならし:a:20:7::jump/おおごえ:s:0:8::curse", "herb/bomb", "かじられた棍棒", "国境の山で、大昔から人々を見守っている巨人。大きな棍棒は、折れた大木を、くぎで補強しながら、何代も受け継いできた。こだわりは足音で、地面を揺らさないよう、静かに歩く練習をしている。普段は山の上でのんびりと腰をおろし、霧が晴れるのを待っている。声が大きすぎるのを気にして、ふだんは話さないが、嵐の夜、迷子の羊を見つけると、優しい声で、「こっちだ」と呼ぶ。"], ["flame2", 4, "マグマゴーレム", "ゴーレム", 8, "fire", 240, 40, 62, 54, 44, 32, 24, 12, "d4", "マグマパンチ:a:24:9:fire/ねっぷう:m:22:12:fire/あつい大地:f:0:12::fire/ほのおのよろい:b:12:8", "molotov/bomb", "さめない溶岩のかけら", "火山の溶岩の中で、石と炎が混ざって生まれたマグマの巨人。体の割れ目から、いつも赤いマグマがちらちらと光る。こだわりは火の温度で、毎朝、自分の胸に手を当てて確かめている。普段は洞窟の奥で静かに座り、旅人が来ると、少しだけ温度を下げてくれる。ただし、雨が降ると体の火がしゅんと弱まって、落ち込んでしまう。それでも、また燃え上がる日を、静かに待っている。"], ["onryo", 4, "ぶちぎれ怨霊", "幽霊", 4, "none", 180, 90, 24, 20, 62, 58, 44, 38, "m6", "うらみのたま:m:22:12:poison/くさりのしばり:s:0:10::para/ふかいのろい:s:0:10::curse/ひとだまのやみ:f:0:12::dark", "water/elixir", "うらみの鎖", "長い年月、鎖につながれていた魂が、ついに怒りで鎖を引きちぎって生まれた怨霊。紫の宝珠は、閉じこめられた悲しみが固まったもの。こだわりは呪文の発音で、毎晩、一音ずつ確かめている。普段は暗い洞窟で、鎖の音を聞きながら、ぼんやりと過ごす。怒ってばかりいるように見えて、実は「誰か、そばにいて」と、小さくつぶやいている。"], ["yurei", 4, "おめんの幽霊", "幽霊", 4, "none", 190, 80, 34, 22, 56, 54, 52, 52, "m5", "まじないのつえ:a:20:7::spin/ひとだまのひ:m:22:12:fire/おそろしいおめん:s:0:10::curse/きりのひめ:f:0:12::fog", "cure/elixir", "おめんのかけら", "古い神社の境内で、ずっと祈り続けた巫女の魂が、お面をかぶって生まれ変わった幽霊。肩の鬼の面は、人を驚かせるためではなく、悲しみを隠すためのもの。こだわりは和紙のお札の飾り方で、毎日、新しい模様を描いている。普段は参道を静かに歩き、迷い込んだ旅人に、道を教えている。そのたびに、彼女の足元に、小さな花が咲く。誰にも気づかれないまま。"], ["kaze", 4, "かぜのグリフォン", "精霊", 6, "wind", 220, 70, 52, 38, 54, 44, 76, 52, "a2,d3", "かまいたち:m:22:10:wind/きゅうこうかダイブ:a:22:8::jump/ふきすさぶ:f:0:12::wind/かぜのまとい:b:12:6", "herb/charm", "かぜの羽根かざり", "風が一番強い山の頂で、風の精霊の羽根から生まれた、風のグリフォン。翼のうずまきは、世界じゅうの風を覚えた証。こだわりは羽ばたきの角度で、毎日、風を読んで調整している。普段は空を旅して、風の知らせを人々に届けている。誰にも話しかけられない孤独を抱えているが、子どもたちが空に手を振ってくれる日は、いつもより高く、遠くまで飛ぶのだ。"], ["fallen", 4, "くろはねの堕天使", "天使", 5, "none", 200, 80, 58, 40, 46, 40, 60, 44, "a4,d3", "こくようのつるぎ:a:22:8::spin/くろいはねふぶき:m:22:12:wind/くらやみのまく:f:0:12::dark/うらぎりのささやき:s:0:10::curse", "cure/charm", "くろい羽根", "かつて天界の騎士団にいたが、仲間を守るために規則を破り、翼を黒く染められた堕天使。大きな剣は、昔の天使の剣を、黒く打ち直したもの。こだわりは羽の手入れで、一枚ずつ丁寧に、毎晩整えている。普段は夜空の下で一人、星を見上げている。堕ちたことを後悔はしていないが、ときどき、白い羽の夢を見る。目覚めると、枕が、少しだけ濡れている。"], ["enma", 5, "えんまだいおう", "鬼", 8, "fire", 340, 90, 84, 66, 70, 62, 44, 40, "a6,d6,m4", "ごうかのハンマー:a:30:12::spin/じごくのほのお:m:28:14:fire/うらがえしの巻物:s:0:12::curse/ほのおのだいち:f:0:14::fire", "cure/bomb", "えんまちょう", "地獄の裁判所で、何千年も、亡者の罪を裁いてきた閻魔大王。巻物には、これまで裁いた全員の名前が、小さな文字でびっしり書かれている。こだわりは判決の言葉で、必ず、相手の良いところを一つ、見つけてから裁く。普段は書類仕事に追われ、疲れて、ハンマーを枕にして眠る。罰を与えるたび、心の中で「すまぬ」と手を合わせる。その優しさこそ、彼を大王たらしめている。"], ["ryu", 5, "せいりゅう", "ドラゴン", 9, "wind", 350, 100, 80, 60, 82, 70, 66, 50, "a4,d6,m4", "あらしのいき:m:28:14:wind/つばさのかまいたち:a:28:10::jump/てんのかぜ:f:0:14::wind/りゅうのいかり:s:0:12::dope", "herb/bomb", "りゅうのひげ", "雲の上の宮殿で、風と雷に育てられた、翼を持つ龍。ひげと鬣は、嵐のたびに、少しずつ、伸びてきた。こだわりは雲の流れを読むことで、毎朝、空の様子を確かめてから出かける。普段は山の祠で、人々の祈りを静かに聞いている。ときどき、小さな子どもが握り飯を供えてくれるのが、何よりの楽しみ。それを食べたあと、龍は、その村にだけ、特別に雨を降らせる。"], ["king", 5, "ひかりのじゅうじん王", "人型", 6, "heal", 340, 90, 76, 68, 74, 76, 46, 54, "a4,d6,m6,e4", "おうけんのいちげき:a:28:10/ひかりのしゃくじょう:m:28:14/おうのいのり:h:16:12/おうさまの号令:s:0:12::dope", "herb/elixir", "おうしゃくの印章", "角と尻尾を持つ、ふしぎな王様。人間の国の王家に生まれたが、生まれつき角があり、一度は城を追い出された。それでも国民を愛し、いまでは誰より信頼される王となった。こだわりは王冠の磨き方で、毎朝、国民の顔を思い浮かべながら磨く。普段は城の庭で、子どもたちと遊ぶ。胸の光る紋章は、国民みんなの祈りの形。その光の下で、彼は静かに、涙をこぼしている。"], ["necro", 5, "どくろの王", "幽霊", 5, "poison", 330, 110, 66, 56, 90, 80, 50, 44, "m8,e4", "しりょうのいかずち:m:28:14:thunder/ほねのこぶし:a:26:10::spin/ししゃののろい:s:0:12::curse/ぼちのやみ:f:0:14::dark", "water/elixir", "どくろの王冠", "かつては優しい王だったが、死んだあとも国を守りたくて、骸骨の王となった。冠には、国民みんなの名前が、小さく刻まれている。こだわりは杖の青い炎で、毎晩、亡くなった民の魂を、見守っている。普段は暗い墓地で、ひとり、静かに玉座に座っている。「もう休んでよい」と言われても、頭を横に振る。きょうも墓石に花を供える音だけが、静かに響いている。"], ["daimaou", 5, "ほのおの大まおう", "魔族", 8, "fire", 360, 100, 92, 70, 66, 60, 56, 44, "a8,d6", "ほのおのつるぎ:a:30:12:fire:spin/やみのいかずち:m:28:14:thunder/ぜつぼうのさけび:s:0:12::curse/くらやみのまく:f:0:14::dark", "cure/bomb", "だいまおうの角かざり", "炎の剣を持つ、魔界の大魔王。かつては、ただの小さな悪魔だったが、一族のために戦い続けて、気づけば大魔王になった。こだわりは剣の炎の色で、毎日、少しずつ変えている。普段は玉座で退屈そうにしているが、実は部下の誕生日を、全員覚えている。倒されるたびに、「次は、もっと強くなる」と笑う。その背中を、部下たちはこっそり、誇りに思っている。"], ["maou2", 5, "つのかんむり魔王", "魔族", 7, "none", 340, 100, 82, 64, 76, 66, 54, 44, "a6,d4,m4", "ほのおのけん:a:28:10:fire/まほうじん:m:26:14/ちのいのり:h:14:12/まおうのはどう:s:0:12::dope", "water/elixir", "まおうの耳かざり", "頭の角に宝石の冠をいただく魔王。幼いころの夢は、勇者に倒されることだったが、気づけば本物の魔王になってしまった。こだわりは玉座の座り心地で、背もたれの角度に、三日悩んだ。普段は、魔法陣の上で書類にサインをしている。勇者が来ると、少し緊張して、台詞を何度もリハーサルしてから迎える。倒されたあとは、こっそり宿屋で、勇者に、お茶を出している。"], ["megami", 5, "ぎんがの女神", "神", 8, "heal", 330, 130, 56, 58, 96, 94, 62, 66, "m8,e6", "ぎんがのうず:m:30:16/いのりのひかり:h:20:14/ほしぞらのまく:f:0:14::fog/やすらぎのひかり:s:0:12::relax", "water/elixir", "ぎんがのかけら", "星々の海の中心で、宇宙と手を取り合って生まれた女神。杖の水晶は、新しい星が生まれるたびに、少しだけ輝きを増す。こだわりは宇宙の渦巻きの形で、毎朝、手のひらで確かめている。普段は雲の上で、人々の祈りを聞き、静かに頷いている。ただ、神様の仕事は山のようで、時々、寝坊をする。そんなときは、星たちが、こっそり代わりに瞬いてくれる。"], ["kami", 5, "つきほしの神", "神", 8, "heal", 350, 130, 60, 60, 100, 96, 54, 60, "m8,e6", "ほしのしょうへき:m:30:16/つきのいやし:h:20:14/てんのさばき:m:28:14:thunder/ねむりのよる:s:0:12::sleep", "water/elixir", "つきの杖かざり", "世界のはじまりから生きている、月と星の神。杖の月は、毎晩少しずつ欠けては満ちて、人々の時間を数えている。こだわりは夜空の掃除で、毎晩、星たちを一つずつ磨いている。普段は雲の上でひげを撫でながら、人々の祈りを聞いている。長い時間のなかで、いくつもの別れを見たが、それでも、人々が笑っている夜が、いちばん好きだと言う。"], ["senju", 5, "せんじゅ観音", "神", 6, "heal", 340, 110, 74, 64, 82, 84, 58, 62, "m6,e6", "せんしゅのこぶし:a:28:10::spin/めぐみのほのお:m:26:12:fire/いやしのて:h:18:12/ありがたいひかり:s:0:12::relax", "herb/elixir", "ちいさな蓮のはな", "千の手を持つ、慈悲の観音。手のひらには、それぞれ炎や宝玉や蓮の花など、人々を助ける道具が乗っている。こだわりは手の数え方で、毎朝、全部の手を確かめている。普段は静かに合掌し、人々の願いを聞いている。ただし、助けたい人が多すぎて、手がいくつあっても足りないのが、悩み。それでも毎日、一つずつ、ていねいに、手を差し伸べ続けている。"], ["daitenshi", 5, "ひかりのつるぎ大天使", "天使", 6, "heal", 340, 90, 86, 70, 66, 64, 66, 50, "a6,d6", "こうたんのけん:a:30:12::spin/ひかりのたて:b:14:8/ちからのいのり:h:16:12/まばゆいひかり:m:26:14", "cure/elixir", "こうたんのはね", "天界の騎士団を束ねる、光の剣を持つ大天使。六枚の翼は、戦いのたびに増え、いまでは空を覆うほど。こだわりは剣の手入れで、毎晩、星の光で磨いている。普段は雲の上で、新人の天使たちに剣の稽古をつけている。見た目は立派だが、実は猫アレルギーで、近くに猫が来るとくしゃみが止まらない。それでも迷子の子猫を見つけると、そっと抱き上げて、涙目で、笑う。"], ["daitenshi2", 5, "けもの大天使", "天使", 7, "thunder", 330, 90, 82, 68, 66, 62, 64, 48, "a6,d6", "せいなるやり:a:28:10::jump/いなずまのきらめき:m:26:14:thunder/せいなるまもり:b:14:8/めぐみのあめ:f:0:14::water", "herb/charm", "ほしのたての欠片", "獅子のような姿で生まれた、風変わりな大天使。羽根の槍は、天界の戦いで折れた仲間の羽根を、ひとつずつ束ねたもの。こだわりは盾の星の形で、毎日、傷を数えて、仲間の名前を唱えている。普段は雲の上の聖堂で、静かに祈っている。見た目はいかついが、小さな鳥が肩に止まると、動けなくなってしまう。それでも、鳥が飛び立つまで、じっと、待っているのだ。"], ["ashura", 5, "ろっぴの阿修羅", "鬼神", 7, "none", 340, 70, 88, 62, 40, 50, 62, 44, "a8,d4", "ろっぽんのやり:a:30:12::spin/ちからのたたき:a:28:10::jump/いかりのみまい:s:0:12::rage/たてのうなり:b:14:8", "cure/bomb", "あおい腕輪", "六本の腕を持つ、青い肌の戦神。六つの武器は、それぞれ、亡くなった仲間たちから受け継いだ形見。こだわりは武器の手入れで、毎晩、六本同時に磨く。普段は岩の上で瞑想をし、街の平和を静かに見守っている。ただし、怒ると六つの武器が勝手に動き出し、自分でも止められない。それを恥じて、いつも、反省会を、一人で開いている。"], ["kyofu", 5, "きょうふの黒竜獣", "キメラ", 8, "poison", 350, 90, 86, 64, 56, 52, 50, 38, "a6,d6", "どくのきば:a:28:10:poison/きょうふのさけび:s:0:12::curse/やみのもや:f:0:14::dark/くらいほのお:m:26:14:fire", "cure/bomb", "くろいトゲの腕輪", "人々の「こわい」という気持ちが集まって生まれた、闇の竜獣。体のルーンは、昔の恐怖の物語を、忘れないために刻まれた。こだわりは自分の影の濃さで、毎日、少しずつ測っている。普段は暗い洞窟で、夢のなかの子どもたちに、悪夢を見せているが、本当は、その悪夢を食べてあげている。誰も知らないが、彼のおかげで、今日も子どもたちは、ぐっすり眠れている。"]];
+NEWMON.forEach(r=>{
+  const [id,lv,name,type,size,elem,hp,mp,str,hard,int,spi,spd,lck,bonus,skills,items,treasure,story]=r,b={};
+  (bonus||'').split(',').filter(Boolean).forEach(t=>{b[BK[t[0]]]=+t.slice(1)});
+  const sk=skills.split('/').map(t=>{const [n,k,p,m2,el,x]=t.split(':'),o={name:n,kind:KD[k],power:+p||0,mp:+m2||0,elem:el||'none',st:'',fld:'',motion:''};
+    if(k==='s')o.st=x||'';else if(k==='f')o.fld=x||'';else if(x)o.motion=x;return o});
+  const [g,sp]=items.split('/');
+  FOES.push({id,img:id,lv,name,type,size,elem:elem||'none',hp,mp,str,hard,int,spi,spd,lck,bonus:b,skills:sk,items:{gen:g,spc:sp},treasure,story});
+});
+FOES.forEach(f=>{f.src=IMGS[f.img]});
+FOES.forEach(f=>{f.raw={hp:f.hp,mp:f.mp,str:f.str,hard:f.hard,int:f.int,spi:f.spi,spd:f.spd,lck:f.lck}});
+/* レベル別の強さ調整(テストプレイで決めた倍率)。数値を変えると敵全体の強さを調整できます */
+const LV_TUNE={1:{hp:1.6,atk:2.2,def:1.25},2:{hp:1.3,atk:1.6,def:1.2},3:{hp:1.4,atk:1.65,def:1.35},4:{hp:1,atk:1,def:1},5:{hp:.6,atk:.5,def:.5}};
+FOES.forEach(f=>{const k=LV_TUNE[f.lv];f.hp=Math.round(f.hp*k.hp);f.str=Math.round(f.str*k.atk);f.int=Math.round(f.int*k.atk);f.hard=Math.round(f.hard*k.def);f.spi=Math.round(f.spi*k.def)});
+const MON_TUNE={"yousei":{"s":0.5},"tonbo":{"s":0.86},"goblin":{"s":0.78},"ninja":{"s":0.85},"fseirei":{"s":0.86},"stone2":{"s":0.82},"elf":{"s":0.62},"jigoku":{"s":0.72},"wyvern":{"s":0.72},"higuma":{"s":0.75},"jiisan":{"s":0.7},"ougonkama":{"s":0.8},"jyu":{"s":0.67},"kage":{"s":0.82},"ika":{"s":0.6},"vamgirl":{"s":0.79},"dwarf":{"s":0.74},"bluedr":{"s":0.74},"reddr":{"s":0.82},"greendr":{"s":0.48},"hime":{"s":1.18},"ninja2":{"s":0.86},"cyclops":{"s":0.78},"kyojin":{"s":0.84},"onryo":{"s":0.87},"kaze":{"s":0.7},"maou2":{"s":0.84},"megami":{"s":0.82},"kami":{"s":0.77},"daitenshi2":{"s":1.1},"ashura":{"s":1.19},"kyofu":{"s":1.43}};
+FOES.forEach(f=>{const k=MON_TUNE[f.id];if(k){f.hp=Math.round(f.hp*k.s);f.str=Math.round(f.str*k.s);f.int=Math.round(f.int*k.s);f.hard=Math.round(f.hard*Math.sqrt(k.s));f.spi=Math.round(f.spi*Math.sqrt(k.s))}});
+
+/* ---------- 図鑑の記録(この端末のみ) ---------- */
+function zkGet(){try{return JSON.parse(localStorage.getItem('mb_zukan')||'{}')}catch(e){return{}}}
+function zk(id,k){try{const z=zkGet();z[id]=z[id]||{seen:0,won:0,lost:0};z[id][k]=(z[id][k]||0)+1;localStorage.setItem('mb_zukan',JSON.stringify(z))}catch(e){}}
+
+/* ---------- 画面 ---------- */
+const DIF=[{n:'やさしい',sc:.85,heal:.6},{n:'ふつう',sc:1,heal:.4},{n:'むずかしい',sc:1.2,heal:.2}];
+function head(t){return`<button class="alt" id="back">← もどる</button><h2 style="margin-top:12px">${t}</h2>`}
+function home(){setScene('title');bgmStart(92,'title');
+  app.innerHTML=`<h1>🖍 らくがきモンスターで<br>AIバトル!</h1><p class="sub">描いたイラストから、AIが名前と能力を決めて戦う1対1バトル</p>
+  <div class="row menu"><button id="b1">⚔ ソロ<br><small>弱い順に5連勝をめざせ(3段階の難易度)</small></button><button id="b2">🤝 対戦<br><small>用意したイラスト同士で1対1</small></button><button id="b3">📖 モンスター図鑑<br><small>記録した最大20体と、倒した敵・お宝</small></button><button id="b4">★ モンスター合体<br><small>倒した敵と自作モンスターを合体</small></button></div>`;
+  $('#b1').onclick=single;$('#b2').onclick=versus;$('#b3').onclick=zukan;$('#b4').onclick=gattai;
+}
+
+function single(){setScene('s1');bgmStart(92,'title');
+  app.innerHTML=head('ソロモード')+`<div class="card" id="up"></div><p class="sub">${invBar()}</p>
+  <div class="row dif">${DIF.map((d,i)=>`<button data-d="${i}" class="${i===1?'':'alt'}">${d.n}</button>`).join('')}</div>
+  <p class="sub">バトル中の「📣 応援!」は1回だけ。押すと数秒間、能力がアップします。</p>
+  <div class="row" style="margin-top:10px"><button id="go" disabled>冒険スタート</button></div><div id="stage"></div><div id="arenaBox" class="card" style="display:none"></div><div id="res"></div>`;
+  $('#back').onclick=home;
+  let me=null,di=1;
+  app.querySelectorAll('.dif button').forEach(b=>b.onclick=()=>{di=+b.dataset.d;app.querySelectorAll('.dif button').forEach(x=>x.classList.toggle('alt',+x.dataset.d!==di))});
+  $('#up').appendChild(uploader('あなたのモンスターをアップロード',m=>{me=m;$('#go').disabled=false}));
+  $('#go').onclick=async()=>{
+    const D=DIF[di];
+    $('#go').disabled=true;$('#up').style.display='none';app.querySelector('.dif').style.display='none';$('#arenaBox').style.display='block';
+    const P=spawn(me);let cleared=0;
+    const line=[1,2,3,4,5].map(l=>{const c=FOES.filter(f=>f.lv===l);return c[ri(0,c.length-1)]});
+    const stages=shuffle(STAGES.filter(x=>!x.boss)).slice(0,4).concat(STAGES.find(x=>x.boss));
+    for(let i=0;i<5;i++){
+      $('#stage').innerHTML='<div class="stage">'+line.map((f,j)=>`<span class="${j<i?'done':j===i?'on':''}">${j+1}</span>`).join('')+`</div><p class="sub">${D.n}・第${i+1}戦 ${stages[i].n}</p>`;
+      const E=spawn(line[i],D.sc);
+      if(i>0){P.hp=Math.min(P.maxhp,P.hp+Math.round(P.maxhp*D.heal))}
+      P.mp=P.maxmp;fresh(P);
+      zk(line[i].id,'seen');
+      const win=await battle(P,E,stages[i],{cheer:[true,false]});
+      zk(line[i].id,win?'won':'lost');
+      if(!win)break;cleared++;
+      const dr=dropTreasure(line[i],line[i].id);
+      if(dr)log(`🎁 お宝「${esc(dr.name)}」を手に入れた!`+(dr.dup?'(すでに持っています)':''),'k');
+      await sleep(dr?2200:1100);
+    }
+    $('#res').innerHTML=cleared===5?`<div class="win">🏆 ${D.n}で5連勝! ${esc(me.name)}は伝説になった!</div>`:`<div class="win">💀 ${cleared}勝でたおれた… (第${cleared+1}戦で敗北)</div>`;
+    $('#res').insertAdjacentHTML('beforeend',`<p class="sub">${invBar()}</p><div class="row"><button id="again">もう一度</button><button class="alt" id="hm">タイトルへ</button></div>`);
+    $('#again').onclick=single;$('#hm').onclick=home;
+  };
+}
+
+function versus(){setScene('vs');bgmStart(92,'title');
+  app.innerHTML=head('対戦モード')+`<div class="card"><h2>プレイヤー1</h2><div id="u1"></div></div><div class="card"><h2>プレイヤー2</h2><div id="u2"></div></div>
+  <p class="sub">バトル中、それぞれ「📣 応援!」を1回だけ押せます。</p>
+  <div class="row"><button id="go" disabled>バトル開始!</button></div><div id="arenaBox" class="card" style="display:none"></div><div id="res"></div>`;
+  $('#back').onclick=home;
+  let a=null,b=null;const chk=()=>{$('#go').disabled=!(a&&b)};
+  $('#u1').appendChild(uploader('1体目をアップロード',m=>{a=m;chk()}));
+  $('#u2').appendChild(uploader('2体目をアップロード',m=>{b=m;chk()}));
+  $('#go').onclick=async()=>{
+    $('#go').disabled=true;document.querySelectorAll('.card').forEach(c=>c.style.display='none');$('#arenaBox').style.display='block';
+    const win=await battle(spawn(a),spawn(b),shuffle(STAGES.filter(x=>!x.boss))[0],{cheer:[true,true]});
+    const dr=dropTreasure(win?b:a);
+    if(dr)log(`🎁 ${esc((win?a:b).name)}はお宝「${esc(dr.name)}」を手に入れた!`+(dr.dup?'(すでに持っています)':''),'k');
+    $('#res').innerHTML=`<div class="win">🏆 ${esc((win?a:b).name)}の勝ち!</div><div class="row"><button id="again">もう一度対戦</button><button class="alt" id="hm">タイトルへ</button></div>`;
+    $('#again').onclick=versus;$('#hm').onclick=home;
+  };
+}
+
+/* ---------- ★ モンスター合体 ---------- */
+const fuseOk=f=>((zkGet()[f.id]||{}).won||0)>0;
+function fuseStats(a,b){
+  const ra=a.raw||a,rb=b.raw||b,cap={hp:[60,350],mp:[10,130],str:[5,100],hard:[5,100],int:[5,100],spi:[5,100],spd:[5,100],lck:[5,100]},o={};
+  for(const k in cap){const x=ra[k],y=rb[k];o[k]=cl((.65*(x+y)/2+.35*Math.max(x,y))*1.1*rnd(.95,1.05),cap[k][0],cap[k][1],cap[k][0])}
+  return o;
+}
+function fuseSkills(a,b){
+  const all=[...a.skills.map(s=>({...s,_o:a})),...b.skills.map(s=>({...s,_o:b}))];
+  const dmg=s=>s.kind==='attack'||s.kind==='magic',pw=s=>dmg(s)?s.power:(s.kind==='status'||s.kind==='field')?14:(s.power||10);
+  const pick=[],used=new Set(),add=s=>{if(!s||used.has(s.name)||pick.length>=4)return;used.add(s.name);const {_o,...c}=s;pick.push({elem:'none',st:'',fld:'',motion:'',...c})};
+  [a,b].forEach(p=>add(all.filter(s=>s._o===p&&dmg(s)).sort((x,y)=>y.power-x.power)[0]));
+  const kinds=new Set(pick.map(s=>s.kind));
+  all.filter(s=>!dmg(s)).sort((x,y)=>pw(y)-pw(x)).forEach(s=>{if(!kinds.has(s.kind)){add(s);kinds.add(s.kind)}});
+  [...all].sort((x,y)=>pw(y)-pw(x)).forEach(add);
+  return pick;
+}
+function fuseName(a,b){
+  const A=[...a.name],B=[...b.name];
+  return((A.length>4?A.slice(0,3):A).join('')+(B.length>4?B.slice(-3):B).join('')).slice(0,10);
+}
+async function fuseImage(sa,sb){
+  const load=s=>new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=s});
+  const [ia,ib]=await Promise.all([load(sa),load(sb)]),W=320,H=320;
+  const mk=(img,left)=>{
+    const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,W,H);
+    const k=Math.min(W/img.width,H/img.height)*.95;x.drawImage(img,(W-img.width*k)/2,(H-img.height*k)/2,img.width*k,img.height*k);
+    const g=x.createLinearGradient(0,0,W,0);
+    if(left){g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(.45,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,.85)')}
+    else{g.addColorStop(0,'rgba(255,255,255,.85)');g.addColorStop(.55,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(255,255,255,0)')}
+    x.fillStyle=g;x.fillRect(0,0,W,H);return c;
+  };
+  const out=document.createElement('canvas');out.width=W;out.height=H;const o=out.getContext('2d');
+  o.fillStyle='#fff';o.fillRect(0,0,W,H);o.globalCompositeOperation='multiply';o.drawImage(mk(ia,true),0,0);o.drawImage(mk(ib,false),0,0);
+  return out.toDataURL('image/jpeg',.78);
+}
+function fuse(a,b,src){
+  const st=fuseStats(a,b),ea=a.elem||'none',eb=b.elem||'none';
+  const sa=(a.raw||a),sb=(b.raw||b),pa=sa.hp+sa.str+sa.int,pb=sb.hp+sb.str+sb.int;
+  const elem=ea===eb?ea:ea==='none'?eb:eb==='none'?ea:(pa>=pb?ea:eb);
+  const bonus={};['atk','def','matk','mdef'].forEach(k=>{const v=Math.round(((a.bonus||{})[k]||0)*.6+((b.bonus||{})[k]||0)*.6);if(v)bonus[k]=v});
+  const ia=a.items||{},ib=b.items||{},A=a.name,B=b.name;
+  return{id:'m'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:fuseName(a,b),type:a.type===b.type?a.type:'キメラ',
+    size:cl(Math.round(((a.size||5)+(b.size||5))/2+.6),1,10,5),elem,...st,bonus,skills:fuseSkills(a,b),
+    items:{gen:GEN[ia.gen]?ia.gen:'herb',spc:SPC[ib.spc]?ib.spc:'elixir'},treasure:(a.name.slice(0,2)+b.name.slice(0,2)+'のあかし').slice(0,14),
+    story:`「${A}」と「${B}」が、ふしぎな光の中でひとつになって生まれた合体モンスター。${A}の強さと、${B}の個性を受けつぎ、どちらでもない新しい姿になった。こだわりは、二つの名前を両方大切にすること。普段は二つの心でおしゃべりをして、よく意見がぶつかる。それでも夜は、二つの夢を一緒に見て、「ひとりじゃないって、いいね」と笑っている。`,
+    src,note:'',fused:[A,B],ts:Date.now()};
+}
+function gattai(){
+  setScene('title');bgmStart(92,'title');
+  let slot=0,pick=[null,null],tab='mine',lv=0,busy=false,msg='';
+  const draw=()=>{
+    const z=zkGet(),mine=mineGet(),foes=FOES.filter(fuseOk).filter(f=>!lv||f.lv===lv);
+    const sl=i=>{const p=pick[i];return`<div class="fz-slot${p?' on':''}${slot===i?' act':''}" data-s="${i}">${p?`<img src="${p.src}" alt=""><div class="name">${esc(p.name)}</div><div class="hint">${p.lv?'Lv'+p.lv+'の敵':'自作'}</div>`:`<div class="fz-q">？</div><div class="hint">素材${'AB'[i]}をえらぶ</div>`}</div>`};
+    const list=tab==='mine'
+      ?(mine.length?`<div class="zgrid">${mine.map(m=>`<div class="card zc" data-id="${m.id}"><img loading="lazy" class="zimg" src="${m.src}" alt=""><div class="name">${m.fused?'★':''}${esc(m.name)}</div><div class="hint">${esc(m.type)}・${elemTag(m)}</div></div>`).join('')}</div>`:'<div class="card"><p>まだ自作モンスターがいません。ソロや対戦でイラストをアップロードすると、ここに並びます。</p></div>')
+      :(foes.length?`<div class="zgrid">${foes.map(f=>`<div class="card zc" data-id="${f.id}"><img loading="lazy" class="zimg" src="${f.src}" alt=""><div class="name">Lv${f.lv} ${esc(f.name)}</div><div class="hint">${esc(f.type)}・${elemTag(f)}</div></div>`).join('')}</div>`:'<div class="card"><p>素材にできる敵がいません。ソロモードで倒すと、ここに並びます。</p></div>');
+    const nd=FOES.filter(fuseOk).length,ok=pick[0]&&pick[1]&&pick[0].id!==pick[1].id;
+    app.innerHTML=head('★ モンスター合体')+`<p class="sub" style="text-align:left">自作モンスターと、<b>倒したことのある敵</b>(${nd}/${FOES.length}体)から2体を選ぶと、ひとつに合体して、新しいモンスターが生まれます。結果は自作モンスターとして記録され、素材はそのまま残ります。</p>
+    <div class="fz-slots">${sl(0)}<div class="fz-plus">＋</div>${sl(1)}</div>
+    <p class="err" style="text-align:center;min-height:1.4em">${msg}</p>
+    <div class="row"><button id="fz" ${ok&&!busy?'':'disabled'}>★ 合体!</button></div>
+    <div class="row zbar" style="margin-top:12px"><button data-t="mine" class="${tab==='mine'?'':'alt'}">🖍 自作モンスター(${mine.length})</button><button data-t="foe" class="${tab==='foe'?'':'alt'}">👾 倒した敵(${nd})</button></div>
+    ${tab==='foe'?`<div class="row zbar">${[0,1,2,3,4,5].map(n=>`<button class="${n===lv?'':'alt'}" data-lv="${n}">${n?'Lv'+n:'すべて'}</button>`).join('')}</div>`:''}
+    ${list}`;
+    $('#back').onclick=home;msg='';
+    app.querySelectorAll('[data-s]').forEach(e=>e.onclick=()=>{slot=+e.dataset.s;draw()});
+    app.querySelectorAll('[data-t]').forEach(e=>e.onclick=()=>{tab=e.dataset.t;draw()});
+    app.querySelectorAll('[data-lv]').forEach(e=>e.onclick=()=>{lv=+e.dataset.lv;draw()});
+    app.querySelectorAll('.zc').forEach(c=>c.onclick=()=>{
+      const m=(tab==='mine'?mine:FOES).find(x=>x.id===c.dataset.id);if(!m||(tab==='foe'&&!fuseOk(m)))return;
+      if(pick[1-slot]&&pick[1-slot].id===m.id){msg='同じモンスター同士は合体できません。別のモンスターを選んでください。';draw();return}
+      pick[slot]=m;slot=pick[0]&&!pick[1]?1:pick[1]&&!pick[0]?0:slot;draw();
+    });
+    $('#fz').onclick=async()=>{
+      if(busy||!ok)return;busy=true;$('#fz').disabled=true;sfx('magic');
+      $('#fz').textContent='✨ 合体中…';
+      let src;try{src=await fuseImage(pick[0].src,pick[1].src)}catch(e){src=pick[0].src}
+      const m=fuse(pick[0],pick[1],src),r=mineSave(m);sfx('win');
+      app.innerHTML=head('★ 合体せいこう!')+`<div class="card fz-res">${card(m)}<p style="margin:10px 0 0">📖 ${esc(m.story)}</p><p class="hint" style="margin:8px 0 0">★ ${esc(m.fused[0])} × ${esc(m.fused[1])}</p><p class="hint">${mineMsg(r)||''}</p></div>
+      <div class="row"><button id="again">もう一度合体</button><button class="alt" id="toz">📖 図鑑で見る</button><button class="alt" id="hm">タイトルへ</button></div>`;
+      $('#back').onclick=home;$('#again').onclick=gattai;$('#toz').onclick=zukan;$('#hm').onclick=home;
+    };
+  };
+  draw();
+}
+
+/* ---------- 図鑑(閲覧専用) ---------- */
+function zukan(){
+  setScene('title');bgmStart(92,'title');
+  let tab='mine',lv=0,sel=null,arm=false,editing=false,zmsg='';
+  const draw=()=>{
+    const z=zkGet(),mine=mineGet(),coll=collGet(),wn=f=>(z[f.id]||{}).won||0,seen=FOES.filter(f=>wn(f)>0).length;
+    let body;
+    if(tab==='mine'){
+      body=mine.length?`<div class="zgrid">${mine.map(m=>`<div class="card zc${sel===m.id?' on':''}" data-id="${m.id}"><img loading="lazy" class="zimg" src="${m.src}" alt=""><div class="name">${m.locked?'🔒 ':''}${m.fused?'★':''}${esc(m.name)}</div><div class="hint">${esc(m.type)}・${elemTag(m)}</div></div>`).join('')}</div>`
+        :`<div class="card"><p>まだ記録がありません。ソロや対戦でイラストをアップロードすると、ここに最大20体まで記録されます。</p></div>`;
+    }else if(tab==='foe'){
+      const list=FOES.filter(f=>!lv||f.lv===lv);
+      body=`<div class="zgrid">${list.map(f=>{const w=wn(f);return w
+        ?`<div class="card zc${sel===f.id?' on':''}" data-id="${f.id}"><img loading="lazy" class="zimg" src="${f.src}" alt=""><div class="name">Lv${f.lv} ${esc(f.name)}</div><div class="hint">撃破×${w}${(z[f.id]||{}).got?' ・🎁入手':''}</div></div>`
+        :`<div class="card zc${sel===f.id?' on':''}" data-id="${f.id}"><img loading="lazy" class="zimg sil" src="${f.src}" alt=""><div class="name">Lv${f.lv} ？？？</div><div class="hint">まだ倒していません</div></div>`}).join('')}</div>`;
+    }else{
+      body=coll.length?`<div class="zgrid">${coll.map(t=>`<div class="card"><div class="name">🎁 ${esc(t.name)}</div><div class="hint">${esc(t.from||'')}から</div></div>`).join('')}</div>`
+        :`<div class="card"><p>まだお宝がありません。倒した相手が、ときどき(30%)落とします。</p></div>`;
+    }
+    const sub=tab==='mine'?`記録 ${mine.length}/${MINE_MAX}体(いっぱいになると古いものから自動削除。🔒でロックすると残せます)`:tab==='foe'?`倒した敵 ${seen}/${FOES.length}体(倒した回数が増えると、情報が見られます)`:`お宝コレクション ${coll.length}個(戦闘能力には関係ない、集める楽しみのためのアイテムです)`;
+    app.innerHTML=head('📖 モンスター図鑑')+`<div class="row zbar"><button data-tab="mine" class="${tab==='mine'?'':'alt'}">🖍 マイモンスター(${mine.length}/${MINE_MAX})</button><button data-tab="foe" class="${tab==='foe'?'':'alt'}">👾 敵(${seen}/${FOES.length})</button><button data-tab="trs" class="${tab==='trs'?'':'alt'}">🎁 お宝(${coll.length})</button></div>
+    <p class="sub" style="text-align:left">${sub}</p>
+    ${tab==='foe'?`<div class="row zbar">${[0,1,2,3,4,5].map(n=>`<button class="${n===lv?'':'alt'}" data-lv="${n}">${n?'Lv'+n:'すべて'}</button>`).join('')}</div>`:''}
+    <div id="zdetail"></div>${body}<p class="sub" style="margin-top:14px">遭遇・撃破の記録、マイモンスター、お宝は、この端末のブラウザに保存されます。</p>`;
+    $('#back').onclick=home;
+    app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;sel=null;arm=false;editing=false;draw()});
+    app.querySelectorAll('[data-lv]').forEach(b=>b.onclick=()=>{lv=+b.dataset.lv;sel=null;draw()});
+    app.querySelectorAll('.zc').forEach(c=>c.onclick=()=>{
+      sel=sel===c.dataset.id?null:c.dataset.id;arm=false;editing=false;draw();
+      if(sel)$('#zdetail').scrollIntoView({behavior:'smooth',block:'start'});
+    });
+    if(!sel)return;
+    if(tab==='mine'){
+      const m=mine.find(x=>x.id===sel);if(!m)return;
+      if(editing){
+        $('#zdetail').innerHTML='<div class="card"><h2>✏ 画像の再編集</h2><p class="hint">「このモンスターで決定」を押すと、編集後の絵をAIがもう一度判定して、名前・能力・特殊能力・お宝・ストーリーを更新します。</p><div id="zedit"></div></div>';
+        drawPad($('#zedit'),async c=>{
+          $('#zedit').innerHTML='<p class="hint">🔍 AIが再判定中…</p>';
+          const r=await analyze(c,{force:true});let nm;
+          if(r.note){nm={...m,src:r.src};zmsg='⚠ '+r.note.replace('ランダムな能力にしました。','')+'名前と能力は、これまでのままにして、絵だけ更新しました。'}
+          else{nm={...m,...r,id:m.id,locked:m.locked,note:''};zmsg='✅ 編集後の絵をAIが再判定して、能力を更新しました。'}
+          mineSet(mineGet().map(x=>x.id===m.id?nm:x));editing=false;draw();
+        },()=>{editing=false;draw()},m.src);
+        return;
+      }
+      const zm=zmsg;zmsg='';
+      $('#zdetail').innerHTML=`<div class="card">${zm?`<p class="hint">${zm}</p>`:''}${card(m)}${m.story?`<p style="margin:10px 0 0">📖 ${esc(m.story)}</p>`:''}${m.treasure?`<p class="hint" style="margin:6px 0 0">🎁 お宝: ${esc(m.treasure)}</p>`:''}
+        <div class="row" style="margin-top:10px;justify-content:flex-start"><button class="alt" id="zedt">✏ 画像を再編集</button><button class="alt" id="zlock">${m.locked?'🔓 ロック解除':'🔒 ロック(自動削除を防ぐ)'}</button><button class="alt" id="zdel">🗑 削除</button></div></div>`;
+      $('#zedt').onclick=()=>{editing=true;draw()};
+      $('#zlock').onclick=()=>{mineSet(mineGet().map(x=>x.id===sel?{...x,locked:!x.locked}:x));arm=false;draw()};
+      $('#zdel').onclick=()=>{
+        if(!arm){arm=true;$('#zdel').textContent='もう一度押すと削除します';return}
+        mineSet(mineGet().filter(x=>x.id!==sel));sel=null;arm=false;draw();
+      };
+    }else if(tab==='foe'){
+      const f=FOES.find(x=>x.id===sel),w=wn(f),r=z[sel]||{};
+      if(!w){$('#zdetail').innerHTML='<div class="card"><p>？？？ はまだ倒していません。倒すと、名前とイラストが分かります。</p></div>';return}
+      const minimal=`<div class="mon">${pic(f)}<div class="info"><div class="name">Lv${f.lv} ${esc(f.name)}</div><div class="stats"><span>HP ${f.hp}</span><span>MP ${f.mp}</span></div></div></div>`;
+      $('#zdetail').innerHTML=`<div class="card">${w>=2?card(f):minimal}
+        ${r.got?`<p class="hint" style="margin:8px 0 0">🎁 お宝: ${esc(f.treasure)}(入手済み)</p>`:''}
+        ${w>=3?`<p style="margin:10px 0 0">📖 ${esc(f.story)}</p>`:`<p class="hint" style="margin:6px 0 0">${w<2?'あと'+(2-w)+'回倒すと、能力と特殊能力が分かります。':'あと'+(3-w)+'回倒すと、ストーリーが読めます。'}</p>`}
+        <p class="hint" style="margin:6px 0 0">遭遇 ${r.seen||0}回 / 撃破 ${w}回 / 敗北 ${r.lost||0}回</p></div>`;
+    }
+  };
+  draw();
+}
+try{if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{})}catch(e){}
+$('#mute').onclick=()=>{muted=!muted;$('#mute').textContent=muted?'🔇':'🔊';if(extCur){extCur.muted=muted;if(!muted)extCur.play().catch(()=>{})}if(!muted)sfx('buff')};
+home();
+</script>
+</body>
+</html>
